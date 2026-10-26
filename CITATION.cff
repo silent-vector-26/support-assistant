@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use or adapt this project, please cite it as below."
+title: "Field Technician Copilot"
+type: software
+authors:
+  - family-names: Khorozov
+    given-names: Alex
+version: 0.1.0
+date-released: 2026-10-26
+url: "https://github.com/silent-vector-26/support-assistant"
+license: MIT

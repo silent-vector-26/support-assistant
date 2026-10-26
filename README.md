@@ -69,6 +69,14 @@ flowchart LR
 
 The basic application runs locally without cloud credentials. Only the OCR feature requires Azure AI Vision.
 
+## Project guidance
+
+- [Contributing](docs/CONTRIBUTING.md)
+- [Security policy](docs/SECURITY.md)
+- [Support](docs/SUPPORT.md)
+- [Community standards](docs/CODE_OF_CONDUCT.md)
+- [Citation metadata](CITATION.cff)
+
 ## Deploy to Azure Container Apps
 
 The repository includes Bicep infrastructure in `infra/` and a manually triggered GitHub Actions workflow at `.github/workflows/deploy-azure.yml`. The workflow runs the unit tests, Python syntax check, and Bicep compilation first. Its deployment job then waits at the `azure-production` GitHub Environment approval gate, provisions the Azure resources, builds and pushes the image to ACR, deploys the image, and checks `/_stcore/health`.
@@ -196,10 +204,16 @@ python -m py_compile app.py fieldtech_assistant.py tests/test_fieldtech_assistan
 ├── .github/
 │   └── workflows/
 │       └── deploy-azure.yml       # Test, protected approval, and deployment
+├── docs/
+│   ├── CODE_OF_CONDUCT.md
+│   ├── CONTRIBUTING.md
+│   ├── SECURITY.md
+│   ├── SRS.md                     # Requirements specification and Mermaid diagrams
+│   └── SUPPORT.md
 ├── Dockerfile                     # Non-root Streamlit container on port 8501
 ├── requirements.txt               # Runtime dependency constraints
-├── docs/
-│   └── SRS.md                    # Requirements specification and Mermaid diagrams
+├── CITATION.cff                   # Software citation metadata
+├── LICENSE                        # MIT License
 └── README.md
 ```
 
@@ -240,4 +254,4 @@ See [docs/SRS.md](docs/SRS.md) for the detailed scope, functional and non-functi
 
 ## License
 
-No license has been selected for this project yet. Add a `LICENSE` file before publishing if you want to grant others permission to reuse or modify the code. Check the terms for any separately added documentation, images, or other sample content as well.
+This project is licensed under the [MIT License](LICENSE). The license applies to project materials owned by the repository author; separately sourced documents, images, and dependencies may have their own terms.
