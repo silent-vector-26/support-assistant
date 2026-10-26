@@ -69,6 +69,38 @@ flowchart LR
 
 The basic application runs locally without cloud credentials. Only the OCR feature requires Azure AI Vision.
 
+## Deploy to Azure Container Apps
+
+The repository includes Bicep infrastructure in `infra/` and a manually triggered GitHub Actions workflow at `.github/workflows/deploy-azure.yml`. The workflow runs the unit tests, Python syntax check, and Bicep compilation first. Its deployment job then waits at the `azure-production` GitHub Environment approval gate, provisions the Azure resources, builds and pushes the image to ACR, deploys the image, and checks `/_stcore/health`.
+
+The planned resources are an Azure Container Apps environment, one public Container App, a Basic Azure Container Registry, and a Log Analytics workspace. The Container App uses a system-assigned identity, HTTPS ingress, 0–1 replicas, and the Streamlit port `8501`. Bicep first deploys a public placeholder image so the registry and identity exist; the workflow then pushes the app image and redeploys with the real image. The fixed ACR baseline was estimated at approximately **$5.10 USD/month**; Container Apps and Log Analytics usage beyond their free grants, data transfer, and taxes may add cost.
+
+> **Demo-only exposure:** ingress is public and the app has no sign-in. Use fictional data only; do not expose real customer, technician, or service records.
+
+### Configure the GitHub deployment gate
+
+Before the workflow can deploy, configure the repository and Azure identity:
+
+1. In **Settings → Environments**, create `azure-production`, add the required reviewers, and restrict deployment branches to `main`. Environment protection is configured in GitHub, not in workflow YAML. Confirm your GitHub plan and repository visibility support required reviewers; do not run deployment until the protection rule is active.
+2. Create or select an Azure service principal for GitHub Actions and add a federated identity credential with issuer `https://token.actions.githubusercontent.com`, audience `api://AzureADTokenExchange`, and subject `repo:silent-vector-26/support-assistant:environment:azure-production`.
+3. Give that identity only the permissions needed to deploy the listed resources in the planned subscription and resource group. Subscription-scope Bicep needs permission to create/update the resource group and subscription deployment record; the resource-group deployment needs resource write permissions and permission to assign the ACR roles. Avoid granting blanket `Owner` access. Have an Azure administrator scope these permissions to this workload and, where supported, restrict role assignment permissions to the `AcrPull` and `AcrPush` roles used by the template.
+4. In the `azure-production` environment, add these **variables**:
+
+   | Variable | Value |
+   |---|---|
+   | `AZURE_CLIENT_ID` | Service principal application/client ID |
+   | `AZURE_TENANT_ID` | Entra tenant ID |
+   | `AZURE_SUBSCRIPTION_ID` | Subscription ID containing the deployment |
+   | `AZURE_DEPLOYER_OBJECT_ID` | Service principal object ID (not its client ID) |
+   | `AZURE_VISION_ENDPOINT` | Optional Azure AI Vision endpoint |
+
+   Add `AZURE_VISION_KEY` as an **environment secret** only when enabling OCR. The workflow passes it as a secure Bicep parameter and the Container App stores it as a secret; it is never committed to the repository.
+5. From the repository's **Actions** tab, run **Test and deploy to Azure** on `main`. The test job must pass before GitHub requests environment approval. Approving that job permits provisioning and deployment.
+
+For example, the service principal object ID can be looked up by an Azure administrator with `az ad sp show --id <client-id> --query id -o tsv`. The workflow uses OIDC; no Azure client secret is stored in GitHub. The first deployment creates the resource group and resources described by `infra/main.bicep`. No Azure resources are created by adding these repository files.
+
+Optional OCR works in Azure only when both Vision settings above are provided. Without them, image text extraction remains unavailable and technicians can enter or verify details manually.
+
 ## Run locally
 
 ### Windows PowerShell
@@ -157,8 +189,17 @@ python -m py_compile app.py fieldtech_assistant.py tests/test_fieldtech_assistan
 │   └── manuals.json               # Synthetic, cited troubleshooting corpus
 ├── tests/
 │   └── test_fieldtech_assistant.py
+├── infra/
+│   ├── main.bicep                 # Subscription-scope entry point and resource group
+│   ├── main.parameters.json       # Non-secret deployment parameters
+│   └── modules/                   # ACR, Container Apps platform, and app
+├── .github/
+│   └── workflows/
+│       └── deploy-azure.yml       # Test, protected approval, and deployment
+├── Dockerfile                     # Non-root Streamlit container on port 8501
 ├── requirements.txt               # Runtime dependency constraints
-├── SRS.md                         # Requirements specification and Mermaid diagrams
+├── docs/
+│   └── SRS.md                    # Requirements specification and Mermaid diagrams
 └── README.md
 ```
 
@@ -195,7 +236,7 @@ Possible future improvements include persistent case storage, a configurable doc
 
 ## Requirements specification
 
-See [SRS.md](SRS.md) for the detailed scope, functional and non-functional requirements, acceptance criteria, and Mermaid diagrams.
+See [docs/SRS.md](docs/SRS.md) for the detailed scope, functional and non-functional requirements, acceptance criteria, and Mermaid diagrams.
 
 ## License
 

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": {
+      "value": "field-tech-copilot-dev-72c1"
+    },
+    "location": {
+      "value": "eastus2"
+    },
+    "sessionId": {
+      "value": "72c13f76-aa0b-4811-afc9-16a9aebc20e3"
+    },
+    "deployedBy": {
+      "value": "Alex Khorozov"
+    },
+    "createdAt": {
+      "value": "2026-10-26T10:54:02.3088278-04:00"
+    },
+    "resourceGroupName": {
+      "value": "rg-field-tech-copilot-dev-72c1"
+    },
+    "containerAppEnvironmentName": {
+      "value": "cae-field-tech-copilot-dev-72c1"
+    },
+    "containerAppName": {
+      "value": "ca-field-tech-copilot-dev-72c1"
+    },
+    "registryName": {
+      "value": "crfieldtechcopilotdev72c1"
+    },
+    "workspaceName": {
+      "value": "log-field-tech-copilot-dev-72c1"
+    },
+    "deployerObjectId": {
+      "value": ""
+    }
+  }
+}

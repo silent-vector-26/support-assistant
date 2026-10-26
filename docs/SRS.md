@@ -227,3 +227,13 @@ The demo is ready when a user can complete the simulated HVAC case end to end; s
 - **Image text extraction:** optional Azure AI Vision Image Analysis REST API OCR; extracted text remains tentative until technician confirmation.
 - **State and tools:** in-session case state and synthetic mock asset-history lookup; no external ticket submission or equipment controls.
 - **Evaluation:** Python `unittest` tests for cited retrieval, unsupported questions, safety escalation, report provenance, mock asset isolation, and OCR response parsing.
+
+## 13. Azure deployment requirements
+
+- The deployable service is a Python container hosted by Azure Container Apps and provisioned using Bicep under `infra/`.
+- The image is built from the repository's `Dockerfile`, listens on port `8501`, and runs as a non-root user.
+- Infrastructure includes a Container Apps environment, Container App, Basic Azure Container Registry, and Log Analytics workspace. The app uses a system-assigned identity to pull its image; the registry administrator account is disabled.
+- Public ingress must use HTTPS. The initial demo scales from zero to at most one replica and must use fictional data because the application has no authentication and case state is ephemeral.
+- A manually triggered GitHub Actions workflow must run application tests and Bicep validation before reaching the protected `azure-production` environment approval gate. Azure authentication uses GitHub OIDC, not a stored client secret.
+- Optional Azure AI Vision credentials must be supplied through GitHub Environment configuration, passed only as a secure deployment parameter, and exposed to the container as an application secret. The core demo must remain usable without OCR configuration.
+- Deployment readiness requires repository owners to configure the Azure federated credential, least-privilege Azure permissions, GitHub Environment variables/secrets, and required reviewers. Workflow YAML alone cannot enforce GitHub Environment reviewers.
