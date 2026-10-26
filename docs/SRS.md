@@ -188,7 +188,7 @@ sequenceDiagram
         A-->>P: Mock history or explicit tool error
     end
     P-->>UI: Prepare editable, evidence-linked report draft
-    UI-->>T: Request review; do not submit automatically
+    UI-->>T: Request review, never submit automatically
 ```
 
 ## 9. Case evidence lifecycle
