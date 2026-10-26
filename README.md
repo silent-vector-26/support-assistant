@@ -2,6 +2,8 @@
 
 A Python portfolio demo of an evidence-linked support assistant for commercial HVAC field technicians. It follows a simulated rooftop-unit service visit from initial fault report through documentation-backed checks to a technician-reviewed service-report draft.
 
+> **Project specification:** See the [Software Requirements Specification](docs/SRS.md) for the project's scope, requirements, acceptance criteria, safety boundaries, and Mermaid diagrams. It describes what this demo is designed to do—and what it deliberately does not do.
+
 > **Demonstration only.** The app uses simulated service data and a small sample corpus. It is not a diagnostic authority, a substitute for manufacturer instructions or site safety procedures, or a control system for real equipment.
 
 ## Why this project?
@@ -247,10 +249,6 @@ The current build is deliberately scoped for a small, repeatable portfolio demo:
 - There is no user authentication, authorization, or production data protection.
 
 Possible future improvements include persistent case storage, a configurable document-ingestion pipeline, hybrid or semantic search, a richer retrieval evaluation set, and an optional grounded language model that preserves the current citation and safety requirements.
-
-## Requirements specification
-
-See [docs/SRS.md](docs/SRS.md) for the detailed scope, functional and non-functional requirements, acceptance criteria, and Mermaid diagrams.
 
 ## License
 
