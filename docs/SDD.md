@@ -177,7 +177,9 @@ Corpus load failures stop the UI. Unknown mock assets produce a visible warning.
 
 ## 5a. Optional AI explanations
 
-`explanations.py` is a separate, opt-in layer. It is active only when `AI_EXPLANATIONS_ENABLED=true` and `AZURE_OPENAI_ENDPOINT` (https), `AZURE_OPENAI_KEY` and `AZURE_OPENAI_DEPLOYMENT` are all set; otherwise the UI shows that explanations are disabled and nothing else changes. Provider cost and key handling are the operator's responsibility; see [Cost optimization](COST_OPTIMIZATION.md). No Bicep resource or secret is provisioned for it, and the deployment workflow does not enable it.
+`explanations.py` is a separate, opt-in layer. It is active only when `AI_EXPLANATIONS_ENABLED=true` and `AZURE_OPENAI_ENDPOINT` (https), `AZURE_OPENAI_KEY` and `AZURE_OPENAI_DEPLOYMENT` are all set; otherwise the UI shows that explanations are disabled and nothing else changes. Provider cost and key handling are the operator's responsibility; see [Cost optimization](COST_OPTIMIZATION.md). Bicep does not provision a model resource. The deployment workflow can connect an existing model through explicit environment settings, but defaults to disabled. The key passes through a secure ARM parameter into a Container App secret reference, never a plain environment value. `scripts/deployment_settings.py` validates optional settings before provisioning and writes a restricted temporary parameter file used by both infrastructure and application deployment phases; the workflow removes the file even on failure.
+
+The owner selected GPT-4.1 mini. A subscription catalog check on 2026-10-27 confirmed version `2025-04-14` and available East US 2 quota, but reported lifecycle `Legacy` and inference deprecation on 2027-04-14. Provisioning is pending confirmation of that lifecycle and the dedicated workload resource target; no live evaluation or enablement is implied by the selection.
 
 ```mermaid
 sequenceDiagram

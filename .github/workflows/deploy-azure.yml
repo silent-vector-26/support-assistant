@@ -11,6 +11,7 @@ on:
       - "tests/**"
       - "evaluation/**"
       - "infra/**"
+      - "scripts/deployment_settings.py"
       - "requirements.txt"
       - "requirements-dev.txt"
       - "Dockerfile"
@@ -97,6 +98,13 @@ jobs:
       AZURE_DEPLOYER_OBJECT_ID: ${{ vars.AZURE_DEPLOYER_OBJECT_ID }}
       AZURE_VISION_ENDPOINT: ${{ vars.AZURE_VISION_ENDPOINT }}
       AZURE_VISION_KEY: ${{ secrets.AZURE_VISION_KEY }}
+      AI_EXPLANATIONS_ENABLED: ${{ vars.AI_EXPLANATIONS_ENABLED }}
+      AZURE_OPENAI_ENDPOINT: ${{ vars.AZURE_OPENAI_ENDPOINT }}
+      AZURE_OPENAI_DEPLOYMENT: ${{ vars.AZURE_OPENAI_DEPLOYMENT }}
+      AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
+      BUDGET_AMOUNT: ${{ vars.BUDGET_AMOUNT }}
+      BUDGET_START_DATE: ${{ vars.BUDGET_START_DATE }}
+      BUDGET_CONTACT_EMAILS: ${{ secrets.BUDGET_CONTACT_EMAILS }}
       DEPLOYMENT_LOCATION: eastus2
       IMAGE_NAME: field-tech-copilot
     steps:
@@ -119,6 +127,13 @@ jobs:
             exit 1
           fi
 
+      - name: Prepare optional deployment settings
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          python scripts/deployment_settings.py "$RUNNER_TEMP/optional-settings.json"
+
       - name: Sign in to Azure with OIDC
         uses: azure/login@v2
         with:
@@ -139,6 +154,7 @@ jobs:
             --location "$DEPLOYMENT_LOCATION"
             --template-file infra/main.bicep
             --parameters "@infra/main.parameters.json"
+            "@$RUNNER_TEMP/optional-settings.json"
             "deployerObjectId=$AZURE_DEPLOYER_OBJECT_ID"
             "deployedBy=$GITHUB_ACTOR"
             "createdAt=$created_at"
@@ -186,6 +202,7 @@ jobs:
             --location "$DEPLOYMENT_LOCATION"
             --template-file infra/main.bicep
             --parameters "@infra/main.parameters.json"
+            "@$RUNNER_TEMP/optional-settings.json"
             "deployerObjectId=$AZURE_DEPLOYER_OBJECT_ID"
             "deployedBy=$GITHUB_ACTOR"
             "createdAt=$created_at"
@@ -194,7 +211,7 @@ jobs:
           if [[ -n "$AZURE_VISION_ENDPOINT" && -n "$AZURE_VISION_KEY" ]]; then
             args+=("visionEndpoint=$AZURE_VISION_ENDPOINT" "visionKey=$AZURE_VISION_KEY")
           fi
-          az deployment sub create "${args[@]}"
+          az deployment sub create "${args[@]}" --output none
 
       - name: Verify the live application health endpoint
         shell: bash
@@ -210,3 +227,8 @@ jobs:
           done
           echo "::error::The Container App did not pass its live health check."
           exit 1
+
+      - name: Remove temporary deployment settings
+        if: always()
+        shell: bash
+        run: rm -f "$RUNNER_TEMP/optional-settings.json"

@@ -10,10 +10,17 @@ param visionEndpoint string
 param visionKey string
 param tags object
 
+param aiExplanationsEnabled bool = false
+param openAiEndpoint string = ''
+param openAiDeployment string = ''
+@secure()
+param openAiKey string = ''
+
 var placeholderImage = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
 var isPlaceholder = containerImage == placeholderImage
 var targetPort = isPlaceholder ? 80 : 8501
 var useVision = !isPlaceholder && !empty(visionEndpoint) && !empty(visionKey)
+var useOpenAi = !isPlaceholder && aiExplanationsEnabled
 var plainEnvVars = [
   {
     name: 'PORT'
@@ -22,6 +29,10 @@ var plainEnvVars = [
   {
     name: 'AZURE_VISION_ENDPOINT'
     value: visionEndpoint
+  }
+  {
+    name: 'AI_EXPLANATIONS_ENABLED'
+    value: useOpenAi ? 'true' : 'false'
   }
 ]
 var visionEnvVars = useVision
@@ -32,11 +43,35 @@ var visionEnvVars = useVision
       }
     ]
   : []
-var appSecrets = useVision
+var visionSecrets = useVision
   ? [
       {
         name: 'vision-key'
         value: visionKey
+      }
+    ]
+  : []
+var openAiEnvVars = useOpenAi
+  ? [
+      {
+        name: 'AZURE_OPENAI_ENDPOINT'
+        value: openAiEndpoint
+      }
+      {
+        name: 'AZURE_OPENAI_DEPLOYMENT'
+        value: openAiDeployment
+      }
+      {
+        name: 'AZURE_OPENAI_KEY'
+        secretRef: 'openai-key'
+      }
+    ]
+  : []
+var openAiSecrets = useOpenAi
+  ? [
+      {
+        name: 'openai-key'
+        value: openAiKey
       }
     ]
   : []
@@ -70,7 +105,7 @@ resource app 'Microsoft.App/containerApps@2026-07-01' = {
               identity: 'system'
             }
           ]
-      secrets: appSecrets
+      secrets: concat(visionSecrets, openAiSecrets)
     }
     template: {
       containers: [
@@ -81,7 +116,7 @@ resource app 'Microsoft.App/containerApps@2026-07-01' = {
             cpu: json('0.5')
             memory: '1Gi'
           }
-          env: concat(plainEnvVars, visionEnvVars)
+          env: concat(plainEnvVars, visionEnvVars, openAiEnvVars)
           probes: [
             {
               type: 'Startup'

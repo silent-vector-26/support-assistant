@@ -15,6 +15,8 @@ This suite covers deterministic core behavior and Streamlit AppTest report synch
 
 `tests/test_explanations.py` covers configuration, output validation, a local fake provider (success, HTTP error, unreadable response, unreachable), the reference evaluation and the UI with and without a model. No network or credentials are used. Run the evaluation alone with `python evaluation/run_evaluation.py`.
 
+`tests/test_deployment_settings.py` checks disabled-by-default deployment settings, complete model credentials, HTTPS endpoint validation, budget amount/date/recipient validation, and temporary parameter-file creation. Run it with `python -m unittest discover -s tests -p test_deployment_settings.py`. These are offline configuration checks, not proof of Azure provisioning, notification delivery or live model quality.
+
 ## Browser acceptance tests
 
 Use Python 3.10+ from the repository root:

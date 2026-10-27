@@ -45,13 +45,19 @@ Retention, cache and resource changes should be delivered through reviewed infra
 
 ## Operational controls
 
-### Budget (disabled until approved)
+### Budget (approved limits; activation pending)
 
-`infra/main.bicep` can create a resource-group-scoped monthly Cost Management budget with actual (50/80/100%) and forecast (100%) alerts. It is **off by default**: nothing is created unless `budgetAmount` is above 0. Because the amount and recipients are owner decisions, no values are committed. To enable it, the owner supplies:
+The owner approved a **$50 monthly budget with a $30 actual-spend warning (60%)** on 2026-10-27 and supplied a notification recipient privately. Treat this as one shared demo budget including optional AI explanations, not an additional AI allowance. Keep any new model resource in the workload resource group for that scope to cover it.
+
+`infra/main.bicep` passes a single actual threshold of 60% and no forecast thresholds to the budget module. It is **off by default**: nothing is created unless `budgetAmount` is above 0. To enable it, the owner supplies:
 
 - `budgetAmount`: monthly amount in the billing currency;
 - `budgetStartDate`: the first day of a month, `yyyy-MM-01`;
 - `budgetContactEmails`: the approved recipients.
+
+For GitHub Actions, configure `BUDGET_AMOUNT=50` and a fixed `BUDGET_START_DATE` (for example `2026-10-01`) as `azure-production` variables, and `BUDGET_CONTACT_EMAILS` as a secret containing a JSON array of approved addresses. Do not roll the start date forward on each deployment. `scripts/deployment_settings.py` validates these settings and forwards them to both deployment phases. The recipient address is not committed to this public repository.
+
+For an existing, evaluated Azure OpenAI deployment, set `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT` and `AI_EXPLANATIONS_ENABLED=true` as environment variables, and `AZURE_OPENAI_KEY` as an environment secret. Missing credentials fail deployment before Azure provisioning. Leave enablement unset or `false` until the model lifecycle/target is confirmed and the live evaluation is reviewed. This wiring does not create a model deployment or establish a hard spending cap.
 
 Budgets send notifications only. They are **not spending caps** and do not stop or throttle resources. Cost data lags by hours to a day, so alerts can arrive after spend occurs. After enabling, verify that each recipient receives a test or threshold notification. The deployment identity also needs permission to create budgets on the resource group; review that before granting it.
 
