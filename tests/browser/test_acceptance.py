@@ -137,7 +137,7 @@ class BrowserAcceptanceTests(unittest.TestCase):
         )["checks"][0]
         self.page.get_by_text("Evidence passages", exact=True).click()
         expect(self.page.get_by_text("Source:", exact=False).first).to_be_visible()
-        self.page.get_by_role("combobox", name="Documented check", exact=True).click()
+        self.page.get_by_role("combobox", name="Documented check", exact=True).press("ArrowDown")
         self.page.get_by_role("option", name=expected["text"], exact=True).click()
         self.record("Maintenance record verified in this simulated visit.")
         editor = self.page.get_by_role("textbox", name="Editable draft", exact=False)
