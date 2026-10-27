@@ -253,9 +253,9 @@ This is a deterministic demonstration of a source-grounded workflow, **not** a p
 - The assistant is not authorized to control equipment or submit service requests.
 - Follow applicable manufacturer documentation, licensing requirements, training, and workplace safety procedures. When the approved demo corpus does not support a safe next step, stop and escalate.
 
-## AI-103 portfolio context
+## Portfolio context
 
-This project can be used to discuss topics such as AI solution design, multimodal input, information retrieval, responsible AI, evaluation, and application integration. It is not an official Microsoft sample and does not claim comprehensive alignment with the AI-103 exam. Check the current official exam skills outline before representing any feature as a specific exam objective.
+This project demonstrates AI solution design, multimodal input, information retrieval, responsible AI, evaluation, and application integration. It is an independent portfolio project, not an official Microsoft sample.
 
 ## Current limitations and possible next steps
 
