@@ -38,7 +38,7 @@ Free grants are subject to subscription eligibility and aggregate usage. A maxim
 | 2 | Add a persistent Docker build cache if measured CI savings justify cache storage | Compare runner duration and cache storage before/after. Never export secrets through layers or cache |
 | 2 | Narrow deployment identity RBAC to workload needs | Not a direct price saving, but limits the impact of unintended resource creation. Review subscription deployment and role-assignment requirements first |
 | 3 | Load-test a smaller supported CPU/memory allocation | Measure startup time, memory peaks, OCR uploads and interaction latency before changing Bicep. Avoid speculative downsizing |
-| 3 | Consider a registry alternative for a public demo image | Compare total cost, pull authentication, rate limits and availability. This changes the ACR requirement and needs an approved design change |
+| Decided | Registry alternative (GitHub Container Registry) | Evaluated and declined on 2026-10-27: the saving is roughly USD 5/month (unmeasured) and does not justify leaving the Azure-native, managed-identity design. ACR Basic stays; control its storage with the cleanup script instead |
 | 3 | Add optional OCR quotas, request deduplication or upload limits if usage increases | Define visible failure behavior and privacy-conscious cache rules. No hidden suppression of OCR requests |
 
 Retention, cache and resource changes should be delivered through reviewed infrastructure/workflow PRs. Budget configuration and subscription RBAC require separate administrative review. No dollar savings are claimed until before/after measurements exist.
