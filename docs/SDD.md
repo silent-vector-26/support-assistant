@@ -110,7 +110,7 @@ classDiagram
     Case ..> Source : reference strings
 ```
 
-`Case`, `CheckRecord` and `Session` are logical shapes, not additional Python classes or database tables. Only `Source` and `RetrievedSource` are dataclasses. Editable report text is stored using a case-specific Streamlit widget key.
+`Case`, `CheckRecord` and `Session` are logical shapes, not additional Python classes or database tables. Only `Source` and `RetrievedSource` are dataclasses. Editable report text uses a session widget key reset on case replacement, even if a timestamp-based case ID is reused. Two generated-report snapshots track the latest evidence and the evidence last reconciled with the editor.
 
 ### Case and report lifecycle
 
@@ -120,8 +120,14 @@ stateDiagram-v2
     NoCase --> ActiveCase: Valid case form submitted
     ActiveCase --> ActiveCase: Retrieve guidance or record evidence
     ActiveCase --> ActiveCase: Confirm tentative OCR clues
-    ActiveCase --> Reviewed: Mark edited draft reviewed
-    Reviewed --> ActiveCase: Edit report or record a check or observation
+    ActiveCase --> Reviewed: Mark current nonempty draft reviewed
+    Reviewed --> ActiveCase: Edit report or automatically refresh unedited report
+    ActiveCase --> ReconciliationNeeded: Evidence changes after manual edits
+    Reviewed --> ReconciliationNeeded: Evidence changes after manual edits
+    ReconciliationNeeded --> ActiveCase: Replace edits with latest evidence
+    ReconciliationNeeded --> ActiveCase: Explicitly confirm manual reconciliation
+    ReconciliationNeeded --> ActiveCase: Start or replace case
+    ReconciliationNeeded --> SessionLost: Session or process state lost
     Reviewed --> Reviewed: Download reviewed report
     ActiveCase --> ActiveCase: Download draft report
     ActiveCase --> ActiveCase: Start or replace case
@@ -131,7 +137,9 @@ stateDiagram-v2
     SessionLost --> [*]
 ```
 
-These are UI states, not a stored lifecycle enum. Downloading does not close the case, and there is no persisted resolved status. The current UI resets review on report edits, recorded checks/observations, or case replacement. OCR confirmation and new guidance do not consistently invalidate review or refresh an already edited report. This is a known implementation gap: the technician must reconcile the editor with current evidence before marking or downloading a report. The diagram describes existing transitions, not a guarantee of complete review invalidation.
+These are UI states, not a stored lifecycle enum. Downloading does not close the case, and there is no persisted resolved status. Every change to generated report content invalidates review, including confirmed OCR observations, guidance references and follow-up limitations. Manual editor changes also invalidate review. Unchanged evidence on a rerun does not invalidate review.
+
+An unedited report refreshes automatically. A manually edited report is preserved when evidence changes, with the latest generated report shown alongside it. Review and download remain blocked until the technician explicitly replaces their edits or confirms that they manually reconciled them with the latest evidence. Reconciliation does not itself mark the report reviewed. The confirmation is a human attestation, not automatic semantic verification of report correctness.
 
 ## 4. Guidance and evidence flow
 
@@ -164,7 +172,7 @@ This is a transparent demonstration heuristic, not semantic relevance verificati
 
 `analyze_image` posts image bytes to the configured endpoint's `/computervision/imageanalysis:analyze` route with API version `2024-02-01`, feature `read`, and a key header. The default request timeout is 20 seconds. Missing configuration, empty input, HTTP/network failures and malformed responses surface as explicit limitations/errors. There is no automatic retry or OCR cache.
 
-Corpus load failures stop the UI. Unknown mock assets produce a visible warning. Reports always contain a draft disclaimer; marking reviewed is session-local and submits nothing externally. The editor uses a case-specific widget key, so manually edited text must be checked against newly recorded evidence before download.
+Corpus load failures stop the UI. Unknown mock assets produce a visible warning. Generated reports contain a draft disclaimer; marking reviewed is session-local and submits nothing externally. Download labels and filenames distinguish draft from reviewed state. Empty or unreconciled reports cannot be downloaded, and an empty report cannot be marked reviewed.
 
 ## 6. CI/CD and infrastructure lifecycle
 

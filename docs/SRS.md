@@ -122,7 +122,7 @@ The system may look up mock asset history and prepare a draft work-order summary
 
 The system shall prepare an editable report containing the reported symptom, equipment identifier, confirmed observations, checks and outcomes, cited references, resolution status, and unresolved questions.
 
-**Acceptance:** The report preserves evidence provenance and is marked as a draft until a technician reviews it.
+**Acceptance:** The report preserves evidence provenance and is marked as a draft until a technician reviews it. Changes to report evidence or edited text invalidate review. Unedited reports refresh with new evidence; manual edits are preserved and require explicit reconciliation before review or download. Empty reports cannot be reviewed or downloaded.
 
 ### FR-9: Evaluate system behavior
 

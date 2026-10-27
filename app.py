@@ -21,6 +21,14 @@ def _invalidate_report_review() -> None:
     st.session_state.report_reviewed = False
 
 
+def _reconcile_report(replace_edits: bool) -> None:
+    report = build_service_report(st.session_state.case)
+    if replace_edits:
+        st.session_state.report_editor = report
+    st.session_state.report_source = report
+    st.session_state.report_reviewed = False
+
+
 st.set_page_config(page_title="Field Technician Copilot", page_icon="🧰", layout="wide")
 st.title("🧰 Field Technician Copilot")
 st.caption(
@@ -62,6 +70,9 @@ with st.sidebar:
             st.session_state.image_bytes = photo.getvalue() if photo else None
             st.session_state.guidance = None
             st.session_state.report_reviewed = False
+            for key in ("report_editor", "report_source", "report_last_evidence"):
+                st.session_state.pop(key, None)
+            st.session_state[f"confirm_{st.session_state.case['case_id']}"] = False
             st.success(f"Case {st.session_state.case['case_id']} is ready.")
 
     if st.session_state.case:
@@ -190,14 +201,40 @@ with intake_col:
 with report_col:
     st.markdown("### Service report")
     report = build_service_report(case)
+    if st.session_state.get("report_last_evidence") != report:
+        st.session_state.report_reviewed = False
+        st.session_state.report_last_evidence = report
+    previous_source = st.session_state.get("report_source")
+    if previous_source is None or st.session_state.get("report_editor") == previous_source:
+        st.session_state.report_editor = report
+        st.session_state.report_source = report
+    report_stale = st.session_state.report_source != report
+    if report_stale:
+        st.warning(
+            "Case evidence changed. Your edits are preserved. Reconcile the draft "
+            "with the latest evidence before review or download."
+        )
+        with st.expander("Latest evidence-generated report", expanded=True):
+            st.markdown(report)
+        st.button(
+            "Replace my edits with latest evidence",
+            on_click=_reconcile_report,
+            args=(True,),
+        )
     edited_report = st.text_area(
         "Editable draft — verify before use",
-        value=report,
         height=500,
-        key=f"report_{case['case_id']}",
+        key="report_editor",
         on_change=_invalidate_report_review,
     )
-    if st.button("Mark draft reviewed"):
+    if report_stale:
+        st.button(
+            "I reconciled my edits with the latest evidence",
+            on_click=_reconcile_report,
+            args=(False,),
+            disabled=not edited_report.strip(),
+        )
+    if st.button("Mark draft reviewed", disabled=report_stale):
         if not edited_report.strip():
             st.error("The report draft cannot be empty.")
         else:
@@ -207,11 +244,15 @@ with report_col:
     else:
         st.caption("Draft only · not submitted")
     st.download_button(
-        "Download reviewed/draft report",
+        "Download reviewed report" if st.session_state.report_reviewed else "Download draft report",
         data=edited_report,
-        file_name=f"{case['case_id'].lower()}-service-report.md",
+        file_name=(
+            f"{case['case_id'].lower()}-"
+            f"{'reviewed' if st.session_state.report_reviewed else 'draft'}-service-report.md"
+        ),
         mime="text/markdown",
-        key=f"download_{case['case_id']}",
+        key="download_report",
+        disabled=report_stale or not edited_report.strip(),
     )
 
 st.divider()
