@@ -13,6 +13,7 @@ RUN python -m pip install --no-cache-dir -r requirements.txt
 
 COPY app.py fieldtech_assistant.py explanations.py ./
 COPY data/ ./data/
+COPY .streamlit/ ./.streamlit/
 
 RUN chown -R app:app /app
 USER app

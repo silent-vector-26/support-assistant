@@ -62,6 +62,18 @@ def _render_explanation(result: dict) -> None:
 
 
 st.set_page_config(page_title="Field Technician Copilot", page_icon="🧰", layout="wide")
+st.markdown(
+    """
+    <style>
+    .block-container { max-width: 1200px; padding-top: 2rem; }
+    h1 { letter-spacing: -0.02em; }
+    [data-testid="stVerticalBlockBorderWrapper"] { background: #FFFFFF; border-radius: 12px; }
+    [data-testid="stExpander"] { background: #FFFFFF; border-radius: 12px; }
+    [data-testid="stAlert"] { border-radius: 12px; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 st.title("🧰 Field Technician Copilot")
 st.caption(
     "A simulated HVAC service assistant. Guidance is grounded in the bundled demo documents; "
