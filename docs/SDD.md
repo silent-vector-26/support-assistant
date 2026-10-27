@@ -248,6 +248,10 @@ Vision endpoint/key are optional and must be supplied together. The key is a Git
 
 Public HTTPS ingress has no user authentication or authorization. Regex checks, citations and technician confirmation are demo safeguards, not production access controls. Use only fictional data. Current subscription-wide deployment RBAC is broader than desirable; narrowing it requires a separately reviewed Azure access change.
 
+## 7a. Visual design
+
+The UI follows a "Calm Evidence Workspace" direction: a light neutral theme, thin borders, white cards and a single blue accent. The theme lives in `.streamlit/config.toml` (copied into the image) plus a small CSS block in `app.py`. Widget labels and roles are unchanged, so the AppTest and Playwright suites are unaffected. The direction was chosen from general UI trends because the Mobbin, Dribbble and Land-book galleries could not be browsed; no specific shots are referenced.
+
 ## 8. Requirements traceability and trade-offs
 
 | SRS requirement | Design realization |
