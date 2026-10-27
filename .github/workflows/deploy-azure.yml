@@ -1,6 +1,19 @@
 name: Test and deploy to Azure
 
 on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - "*.py"
+      - "data/**"
+      - "tests/**"
+      - "infra/**"
+      - "requirements.txt"
+      - "Dockerfile"
+      - ".dockerignore"
+      - ".github/workflows/deploy-azure.yml"
   workflow_dispatch:
 
 permissions:
@@ -32,12 +45,18 @@ jobs:
       - name: Validate Bicep
         run: az bicep build --file infra/main.bicep --stdout > /dev/null
 
+      - name: Verify the container builds
+        run: docker build --file Dockerfile --tag field-tech-copilot:ci .
+
   deploy:
     name: Provision infrastructure and deploy container
     needs: validate
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     environment: azure-production
+    concurrency:
+      group: azure-production-deployment
+      cancel-in-progress: false
     permissions:
       contents: read
       id-token: write
@@ -64,6 +83,11 @@ jobs:
               exit 1
             fi
           done
+          if [[ -n "$AZURE_VISION_ENDPOINT" && -z "$AZURE_VISION_KEY" ]] || \
+             [[ -z "$AZURE_VISION_ENDPOINT" && -n "$AZURE_VISION_KEY" ]]; then
+            echo "::error::Configure both Azure Vision settings or neither."
+            exit 1
+          fi
 
       - name: Sign in to Azure with OIDC
         uses: azure/login@v2
@@ -72,20 +96,35 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Provision the registry and Container App with placeholder image
+      - name: Provision infrastructure, preserving the existing application image
         id: provision
         shell: bash
         run: |
           set -euo pipefail
           created_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
-          result=$(az deployment sub create \
-            --name "field-tech-copilot-${GITHUB_RUN_ID}-infra" \
-            --location "$DEPLOYMENT_LOCATION" \
-            --template-file infra/main.bicep \
-            --parameters @infra/main.parameters.json \
-              deployerObjectId="$AZURE_DEPLOYER_OBJECT_ID" \
-              deployedBy="$GITHUB_ACTOR" \
-              createdAt="$created_at")
+          resource_group=$(jq -r '.parameters.resourceGroupName.value' infra/main.parameters.json)
+          app_name=$(jq -r '.parameters.containerAppName.value' infra/main.parameters.json)
+          args=(
+            --name "field-tech-copilot-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-infra"
+            --location "$DEPLOYMENT_LOCATION"
+            --template-file infra/main.bicep
+            --parameters "@infra/main.parameters.json"
+            "deployerObjectId=$AZURE_DEPLOYER_OBJECT_ID"
+            "deployedBy=$GITHUB_ACTOR"
+            "createdAt=$created_at"
+          )
+          group_exists=$(az group exists --name "$resource_group")
+          if [[ "$group_exists" == "true" ]]; then
+            current_image=$(az containerapp list --resource-group "$resource_group" \
+              --query "[?name=='$app_name'].properties.template.containers[0].image | [0]" -o tsv)
+            if [[ -n "$current_image" ]]; then
+              args+=("containerImage=$current_image")
+            fi
+          fi
+          if [[ -n "$AZURE_VISION_ENDPOINT" && -n "$AZURE_VISION_KEY" ]]; then
+            args+=("visionEndpoint=$AZURE_VISION_ENDPOINT" "visionKey=$AZURE_VISION_KEY")
+          fi
+          result=$(az deployment sub create "${args[@]}")
           outputs=$(jq -c '.properties.outputs' <<< "$result")
           echo "registry=$(jq -r '.registryLoginServer.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
           echo "resource_group=$(jq -r '.resourceGroupName.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
@@ -113,7 +152,7 @@ jobs:
           set -euo pipefail
           created_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
           args=(
-            --name "field-tech-copilot-${GITHUB_RUN_ID}-app"
+            --name "field-tech-copilot-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-app"
             --location "$DEPLOYMENT_LOCATION"
             --template-file infra/main.bicep
             --parameters "@infra/main.parameters.json"

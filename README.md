@@ -1,10 +1,21 @@
 # Field Technician Copilot
 
+[![CI/CD](https://github.com/silent-vector-26/support-assistant/actions/workflows/deploy-azure.yml/badge.svg?branch=main&event=push)](https://github.com/silent-vector-26/support-assistant/actions/workflows/deploy-azure.yml)
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Streamlit](https://img.shields.io/badge/UI-Streamlit-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
+[![Azure Container Apps](https://img.shields.io/badge/Hosting-Azure_Container_Apps-0078D4)](https://learn.microsoft.com/azure/container-apps/overview)
+[![Infrastructure: Bicep](https://img.shields.io/badge/IaC-Bicep-0078D4)](infra/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 A Python portfolio demo of an evidence-linked support assistant for commercial HVAC field technicians. It follows a simulated rooftop-unit service visit from initial fault report through documentation-backed checks to a technician-reviewed service-report draft.
 
 > **Project specification:** See the [Software Requirements Specification](docs/SRS.md) for the project's scope, requirements, acceptance criteria, safety boundaries, and Mermaid diagrams. It describes what this demo is designed to do—and what it deliberately does not do.
 
+> **System design:** The [Software Design Description (SDD)](docs/SDD.md) explains how the requirements are implemented, with Mermaid diagrams covering architecture, the data model, case lifecycle, interactions, Azure deployment, and CI/CD. See the [cost-optimization guide](docs/COST_OPTIMIZATION.md) for spending controls and trade-offs.
+
 > **Demonstration only.** The app uses simulated service data and a small sample corpus. It is not a diagnostic authority, a substitute for manufacturer instructions or site safety procedures, or a control system for real equipment.
+
+**Explore:** [Requirements](docs/SRS.md) · [System design](docs/SDD.md) · [Cost optimization](docs/COST_OPTIMIZATION.md) · [Local setup](#run-locally) · [Azure deployment](#deploy-to-azure-container-apps) · [Contributing](docs/CONTRIBUTING.md)
 
 ## Why this project?
 
@@ -79,11 +90,13 @@ The basic application runs locally without cloud credentials. Only the OCR featu
 - [Community standards](docs/CODE_OF_CONDUCT.md)
 - [Citation metadata](CITATION.cff)
 
+Repository standards include the [MIT license](LICENSE), [editor settings](.editorconfig), [line-ending rules](.gitattributes), and [Git ignore rules](.gitignore). Documentation lives in `docs/`, except this README and the license.
+
 ## Deploy to Azure Container Apps
 
-The repository includes Bicep infrastructure in `infra/` and a manually triggered GitHub Actions workflow at `.github/workflows/deploy-azure.yml`. The workflow runs the unit tests, Python syntax check, and Bicep compilation first. Its deployment job then waits at the `azure-production` GitHub Environment approval gate, provisions the Azure resources, builds and pushes the image to ACR, deploys the image, and checks `/_stcore/health`.
+The repository includes Bicep infrastructure in `infra/` and a GitHub Actions workflow at `.github/workflows/deploy-azure.yml`. Pull requests targeting `main` run unit tests, Python syntax checks, Bicep compilation, and a container build without Azure credentials. Relevant pushes to `main`, including PR merges, automatically run the same checks and queue deployment at the `azure-production` GitHub Environment approval gate. Manual runs remain available. Documentation-only pushes do not deploy. Deployments are serialized without cancelling an active deployment.
 
-The planned resources are an Azure Container Apps environment, one public Container App, a Basic Azure Container Registry, and a Log Analytics workspace. The Container App uses a system-assigned identity, HTTPS ingress, 0–1 replicas, and the Streamlit port `8501`. Bicep first deploys a public placeholder image so the registry and identity exist; the workflow then pushes the app image and redeploys with the real image. The fixed ACR baseline was estimated at approximately **$5.10 USD/month**; Container Apps and Log Analytics usage beyond their free grants, data transfer, and taxes may add cost.
+The resources are an Azure Container Apps environment, one public Container App, a Basic Azure Container Registry, and a Log Analytics workspace. The Container App uses a system-assigned identity, HTTPS ingress, 0–1 replicas, and the Streamlit port `8501`. On first deployment, Bicep uses a public placeholder image so the registry and identity exist. Subsequent runs preserve the deployed image during infrastructure provisioning. The workflow then pushes a commit-tagged app image and deploys it. The fixed ACR baseline was estimated at approximately **$5.10 USD/month**; this is a historical planning estimate, not a current quote. Container Apps and Log Analytics usage beyond their free grants, data transfer, and taxes may add cost.
 
 > **Demo-only exposure:** ingress is public and the app has no sign-in. Use fictional data only; do not expose real customer, technician, or service records.
 
@@ -92,7 +105,7 @@ The planned resources are an Azure Container Apps environment, one public Contai
 Before the workflow can deploy, configure the repository and Azure identity:
 
 1. In **Settings → Environments**, create `azure-production`, add the required reviewers, and restrict deployment branches to `main`. Environment protection is configured in GitHub, not in workflow YAML. Confirm your GitHub plan and repository visibility support required reviewers; do not run deployment until the protection rule is active.
-2. Create or select an Azure service principal for GitHub Actions and add a federated identity credential with issuer `https://token.actions.githubusercontent.com`, audience `api://AzureADTokenExchange`, and subject `repo:silent-vector-26/support-assistant:environment:azure-production`.
+2. Create or select an Azure service principal for GitHub Actions and add a federated identity credential with issuer `https://token.actions.githubusercontent.com` and audience `api://AzureADTokenExchange`. Match the subject to the repository's actual OIDC subject format. This repository uses the ID-qualified subject `repo:silent-vector-26@302260228/support-assistant@1434526386:environment:azure-production`, not the legacy name-only format.
 3. Give that identity only the permissions needed to deploy the listed resources in the planned subscription and resource group. Subscription-scope Bicep needs permission to create/update the resource group and subscription deployment record; the resource-group deployment needs resource write permissions and permission to assign the ACR roles. Avoid granting blanket `Owner` access. Have an Azure administrator scope these permissions to this workload and, where supported, restrict role assignment permissions to the `AcrPull` and `AcrPush` roles used by the template.
 4. In the `azure-production` environment, add these **variables**:
 
@@ -105,7 +118,7 @@ Before the workflow can deploy, configure the repository and Azure identity:
    | `AZURE_VISION_ENDPOINT` | Optional Azure AI Vision endpoint |
 
    Add `AZURE_VISION_KEY` as an **environment secret** only when enabling OCR. The workflow passes it as a secure Bicep parameter and the Container App stores it as a secret; it is never committed to the repository.
-5. From the repository's **Actions** tab, run **Test and deploy to Azure** on `main`. The test job must pass before GitHub requests environment approval. Approving that job permits provisioning and deployment.
+5. Merge a PR that changes application, tests, container, infrastructure, or workflow files into `main`, or run **Test and deploy to Azure** manually from **Actions**. Validation must pass before GitHub requests environment approval. Approving that job permits provisioning and deployment. Direct pushes with relevant changes also trigger deployment; use branch protection requiring PRs and the **Test application and validate Bicep** check if changes must only arrive through reviewed merges.
 
 For example, the service principal object ID can be looked up by an Azure administrator with `az ad sp show --id <client-id> --query id -o tsv`. The workflow uses OIDC; no Azure client secret is stored in GitHub. The first deployment creates the resource group and resources described by `infra/main.bicep`. No Azure resources are created by adding these repository files.
 
@@ -211,7 +224,13 @@ python -m py_compile app.py fieldtech_assistant.py tests/test_fieldtech_assistan
 │   ├── CONTRIBUTING.md
 │   ├── SECURITY.md
 │   ├── SRS.md                     # Requirements specification and Mermaid diagrams
+│   ├── SDD.md                     # Software design and deployment behavior
+│   ├── COST_OPTIMIZATION.md       # Spending controls and optimization backlog
 │   └── SUPPORT.md
+├── .dockerignore                 # Container build context exclusions
+├── .editorconfig                 # Shared editor settings
+├── .gitattributes                # Repository line-ending rules
+├── .gitignore                    # Local artifacts and secret exclusions
 ├── Dockerfile                     # Non-root Streamlit container on port 8501
 ├── requirements.txt               # Runtime dependency constraints
 ├── CITATION.cff                   # Software citation metadata
