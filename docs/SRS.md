@@ -33,7 +33,6 @@ The demonstration will follow one simulated service case: a rooftop HVAC unit re
 - Replacing manufacturer instructions, licensed judgment, or workplace safety procedures.
 - Automatic submission of work orders or service reports.
 - Production deployment, multi-tenant administration, and integration with real customer systems in the initial demo.
-- Claiming comprehensive AI-103 exam coverage without checking the current official skills outline.
 
 ## 3. Users and operating context
 
@@ -218,7 +217,6 @@ The demo is ready when a user can complete the simulated HVAC case end to end; s
 - Azure AI Vision OCR is optional; the demo's local retrieval and other features work without cloud credentials.
 - The initial local retriever is transparent keyword overlap, not a semantic/vector search implementation.
 - Choose the synthetic HVAC fault scenario and create or source permitted manuals/procedure excerpts.
-- Confirm exact AI-103 alignment against the current official skills outline before claiming exam coverage.
 
 ## 12. Implemented technology choices
 
