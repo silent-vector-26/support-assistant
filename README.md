@@ -240,7 +240,7 @@ python -m py_compile app.py fieldtech_assistant.py tests/test_fieldtech_assistan
 │   ├── media/                     # Synthetic-data screenshots
 │   └── SUPPORT.md
 ├── scripts/
-│   └── capture_screenshots.py     # Regenerates docs/media screenshots
+│   ├── acr_cleanup.py             # Dry-run-first ACR image cleanup planner`n│   └── capture_screenshots.py     # Regenerates docs/media screenshots
 ├── .dockerignore                 # Container build context exclusions
 ├── .editorconfig                 # Shared editor settings
 ├── .gitattributes                # Repository line-ending rules

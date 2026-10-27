@@ -47,6 +47,27 @@ module registry './modules/container-registry.bicep' = {
   }
 }
 
+@description('Owner-approved monthly budget in the billing currency. 0 disables the budget; no default is assumed.')
+@minValue(0)
+param budgetAmount int = 0
+
+@description('First day of a month, yyyy-MM-01. Required when budgetAmount is above 0.')
+param budgetStartDate string = ''
+
+@description('Owner-approved alert recipients. Required when budgetAmount is above 0.')
+param budgetContactEmails array = []
+
+module budget './modules/budget.bicep' = if (budgetAmount > 0) {
+  name: 'costBudget'
+  scope: rg
+  params: {
+    budgetName: 'budget-${environmentName}'
+    amount: budgetAmount
+    startDate: budgetStartDate
+    contactEmails: budgetContactEmails
+  }
+}
+
 module platform './modules/container-app-platform.bicep' = {
   name: 'containerAppPlatform'
   scope: rg
