@@ -42,6 +42,36 @@ Free grants are subject to subscription eligibility and aggregate usage. A maxim
 
 Retention, cache and resource changes should be delivered through reviewed infrastructure/workflow PRs. Budget configuration and subscription RBAC require separate administrative review. No dollar savings are claimed until before/after measurements exist.
 
+## Operational controls
+
+### Budget (disabled until approved)
+
+`infra/main.bicep` can create a resource-group-scoped monthly Cost Management budget with actual (50/80/100%) and forecast (100%) alerts. It is **off by default**: nothing is created unless `budgetAmount` is above 0. Because the amount and recipients are owner decisions, no values are committed. To enable it, the owner supplies:
+
+- `budgetAmount`: monthly amount in the billing currency;
+- `budgetStartDate`: the first day of a month, `yyyy-MM-01`;
+- `budgetContactEmails`: the approved recipients.
+
+Budgets send notifications only. They are **not spending caps** and do not stop or throttle resources. Cost data lags by hours to a day, so alerts can arrive after spend occurs. After enabling, verify that each recipient receives a test or threshold notification. The deployment identity also needs permission to create budgets on the resource group; review that before granting it.
+
+### ACR cleanup (inspect first)
+
+`scripts/acr_cleanup.py` plans image cleanup for the `field-tech-copilot` repository. It is a **dry run by default** and deletes nothing without `--apply`.
+
+```powershell
+python scripts/acr_cleanup.py --registry crfieldtechcopilotdev72c1 --app ca-field-tech-copilot-dev-72c1 --resource-group rg-field-tech-copilot-dev-72c1 [--keep 3] [--apply]
+```
+
+It always preserves the image tag currently running in the Container App plus the newest `--keep` tagged images (default 3) as rollback candidates, and any digest referenced by a preserved tag. It refuses to plan deletions if the running tag cannot be determined or is absent from the registry. Unit tests cover these rules. The retention count is a proposed default pending owner approval; deletion is not automated or scheduled.
+
+Observed on 2026-10-27: the registry held 4 tagged images, one running and three rollback candidates, so the dry run found nothing to delete. Image sizes are small, so no storage savings are claimed.
+
+### Findings still to be measured
+
+- **Cost baseline by registry, compute, logs, network and OCR:** not yet recorded. The deployment is only days old and cost data is delayed. Capture it using the measurement procedure below after a representative week, and record the figures here with date, currency and region.
+- **Scale-to-zero after sessions close:** not yet verified. Check the replica count metric after closing all demo tabs and waiting through the idle period.
+- **Before/after savings:** none claimed.
+
 ## Measurement procedure
 
 1. In Azure Cost Management, select the deployment subscription and filter Cost Analysis to `rg-field-tech-copilot-dev-72c1`. Use daily granularity and group by resource, then meter/service.
