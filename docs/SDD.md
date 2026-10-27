@@ -24,6 +24,7 @@ flowchart TD
 | `fieldtech_assistant.py` | Corpus loading, tokenization, ranking, safety patterns, mock assets, OCR REST client, report formatting |
 | `data/manuals.json` | Approved synthetic passages, stable source IDs, checks and keywords |
 | `tests/test_fieldtech_assistant.py` | Deterministic unit tests for core supported and failure paths |
+| `tests/browser/test_acceptance.py` | Isolated Chromium journeys, report downloads and synthetic OCR failure checks |
 | `Dockerfile` | Python 3.12 slim runtime, installed dependencies, non-root Streamlit process |
 | `infra/main.bicep` | Subscription-scope resource group and modular infrastructure deployment |
 | `infra/modules/` | Basic ACR, Log Analytics, Container Apps environment, app and ACR role assignments |
@@ -181,7 +182,11 @@ flowchart TD
     PR["PR targeting main"] --> Validate["Tests, Python syntax, Bicep build, Docker build"]
     Merge["Relevant push to main, including merge"] --> Validate
     Manual["Manual run"] --> Validate
-    Validate --> Gate{"Non-PR run on main and environment approval"}
+    PR --> BrowserTests["Browser acceptance tests with retained diagnostics"]
+    Merge --> BrowserTests
+    Manual --> BrowserTests
+    Validate --> Gate{"Both jobs pass, non-PR run on main and environment approval"}
+    BrowserTests --> Gate
     Gate --> OIDC["Azure login with OIDC"]
     OIDC --> Infra["Provision infrastructure, retain existing image"]
     Infra --> Build["Build and push commit-tagged image to ACR"]
@@ -190,6 +195,8 @@ flowchart TD
 ```
 
 PR jobs have read-only repository access and do not receive Azure environment credentials. Relevant `main` pushes include Python, data, tests, infrastructure, dependencies, Docker configuration and the deployment workflow. Documentation-only pushes do not deploy. Manual dispatch is supported, but deployment only runs on `main`.
+
+Browser tests install development-only Playwright dependencies and Chromium, launch isolated loopback Streamlit processes, and verify interaction and downloaded content. OCR failure tests use absent configuration or a local synthetic service. Browser logs, screenshots and traces are retained for seven days in CI. Both the validation and browser jobs must pass before deployment. See [Testing](TESTING.md).
 
 The `azure-production` environment supplies variables/secrets and required-reviewer protection. Environment rules and branch protection are GitHub settings, not enforced by YAML alone. Deployment concurrency serializes production jobs without cancelling an active job. GitHub may replace an older pending job with a newer pending job; this is latest-pending delivery, not a durable queue of every merge.
 
@@ -215,7 +222,7 @@ Public HTTPS ingress has no user authentication or authorization. Regex checks, 
 | FR-5 | Pre-retrieval safety patterns and unsupported escalation |
 | FR-7 | In-process synthetic asset lookup, no external side effects |
 | FR-8 | Editable Markdown draft and download, no automatic submission |
-| FR-9, NFR-6 | Core unit tests in CI, not a comprehensive groundedness or browser evaluation suite |
+| FR-9, NFR-6 | Core/AppTest regressions and real-browser acceptance tests in CI, not a comprehensive groundedness evaluation |
 | NFR-2, NFR-3, NFR-4 | Citation fields, synthetic data boundary, visible dependency failures |
 | Section 13 | Bicep, non-root container, OIDC, protected deployment and live health check |
 

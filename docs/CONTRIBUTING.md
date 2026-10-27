@@ -25,3 +25,5 @@ az bicep build --file infra/main.bicep --stdout
 ```
 
 Describe the behavior changed, checks run, and any limitations in the pull request. Keep project documentation in `docs/`, except the root `README.md` and `LICENSE`.
+
+For user-facing changes, run the real-browser acceptance suite described in [Testing](TESTING.md). It starts an isolated app, needs no Azure credentials, and verifies the technician journey and OCR limitations. Both CI validation jobs must succeed before deployment.

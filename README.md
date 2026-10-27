@@ -89,12 +89,13 @@ The basic application runs locally without cloud credentials. Only the OCR featu
 - [Support](docs/SUPPORT.md)
 - [Community standards](docs/CODE_OF_CONDUCT.md)
 - [Citation metadata](CITATION.cff)
+- [Testing and browser diagnostics](docs/TESTING.md)
 
 Repository standards include the [MIT license](LICENSE), [editor settings](.editorconfig), [line-ending rules](.gitattributes), and [Git ignore rules](.gitignore). Documentation lives in `docs/`, except this README and the license.
 
 ## Deploy to Azure Container Apps
 
-The repository includes Bicep infrastructure in `infra/` and a GitHub Actions workflow at `.github/workflows/deploy-azure.yml`. Pull requests targeting `main` run unit tests, Python syntax checks, Bicep compilation, and a container build without Azure credentials. Relevant pushes to `main`, including PR merges, automatically run the same checks and queue deployment at the `azure-production` GitHub Environment approval gate. Manual runs remain available. Documentation-only pushes do not deploy. Deployments are serialized without cancelling an active deployment.
+The repository includes Bicep infrastructure in `infra/` and a GitHub Actions workflow at `.github/workflows/deploy-azure.yml`. Pull requests targeting `main` run unit tests, Python syntax checks, Bicep compilation, a container build, and a parallel browser acceptance suite without Azure credentials. Relevant pushes to `main`, including PR merges, automatically run the same checks and queue deployment at the `azure-production` GitHub Environment approval gate only after both jobs pass. Manual runs remain available. Documentation-only pushes do not deploy. Deployments are serialized without cancelling an active deployment.
 
 The resources are an Azure Container Apps environment, one public Container App, a Basic Azure Container Registry, and a Log Analytics workspace. The Container App uses a system-assigned identity, HTTPS ingress, 0–1 replicas, and the Streamlit port `8501`. On first deployment, Bicep uses a public placeholder image so the registry and identity exist. Subsequent runs preserve the deployed image during infrastructure provisioning. The workflow then pushes a commit-tagged app image and deploys it. The fixed ACR baseline was estimated at approximately **$5.10 USD/month**; this is a historical planning estimate, not a current quote. Container Apps and Log Analytics usage beyond their free grants, data transfer, and taxes may add cost.
 
@@ -185,7 +186,7 @@ Use the endpoint shown for your Azure AI Vision resource. Do not put credentials
 ## Tests
 
 The test suite uses Python's standard `unittest` module; no separate test framework is required.
-It includes core unit tests and Streamlit AppTest regressions for report refresh, preserved edits, reconciliation, review invalidation, OCR confirmation, and case replacement. AppTest exercises the UI logic without a browser or Azure credentials; it does not replace browser-level acceptance coverage.
+It includes core unit tests and Streamlit AppTest regressions for report refresh, preserved edits, reconciliation, review invalidation, OCR confirmation, and case replacement. A separate Playwright/Chromium acceptance suite exercises the complete browser journey, downloaded report, unsupported/unsafe questions, and unavailable/failed OCR without Azure credentials. See [Testing](docs/TESTING.md) for setup and diagnostics. Both suites gate deployment in CI.
 
 ```powershell
 python -m unittest discover -s tests -v
@@ -213,7 +214,8 @@ python -m py_compile app.py fieldtech_assistant.py tests/test_fieldtech_assistan
 │   └── manuals.json               # Synthetic, cited troubleshooting corpus
 ├── tests/
 │   ├── test_fieldtech_assistant.py
-│   └── test_report_workflow.py    # Streamlit report synchronization regressions
+│   ├── test_report_workflow.py    # Streamlit report synchronization regressions
+│   └── browser/test_acceptance.py # Separate real-browser suite
 ├── infra/
 │   ├── main.bicep                 # Subscription-scope entry point and resource group
 │   ├── main.parameters.json       # Non-secret deployment parameters
@@ -228,6 +230,7 @@ python -m py_compile app.py fieldtech_assistant.py tests/test_fieldtech_assistan
 │   ├── SRS.md                     # Requirements specification and Mermaid diagrams
 │   ├── SDD.md                     # Software design and deployment behavior
 │   ├── COST_OPTIMIZATION.md       # Spending controls and optimization backlog
+│   ├── TESTING.md                 # Browser acceptance setup and diagnostics
 │   └── SUPPORT.md
 ├── .dockerignore                 # Container build context exclusions
 ├── .editorconfig                 # Shared editor settings
@@ -235,6 +238,7 @@ python -m py_compile app.py fieldtech_assistant.py tests/test_fieldtech_assistan
 ├── .gitignore                    # Local artifacts and secret exclusions
 ├── Dockerfile                     # Non-root Streamlit container on port 8501
 ├── requirements.txt               # Runtime dependency constraints
+├── requirements-dev.txt           # Browser testing dependencies, not runtime
 ├── CITATION.cff                   # Software citation metadata
 ├── LICENSE                        # MIT License
 └── README.md
