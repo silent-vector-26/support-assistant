@@ -121,6 +121,15 @@ class BrowserAcceptanceTests(unittest.TestCase):
         expect(self.page.get_by_label("Editable draft", exact=False)).to_be_visible()
         self.wait_for_app()
 
+    def choose_check(self, text):
+        # Keyboard selection avoids pointer events intercepted by the animating popover.
+        combobox = self.page.get_by_role("combobox", name="Documented check", exact=True)
+        combobox.press("ArrowDown")
+        option = self.page.get_by_role("option", name=text, exact=True)
+        expect(option).to_be_visible()
+        expect(option).to_have_attribute("data-focused", "true")
+        combobox.press("Enter")
+
     def record(self, observation):
         self.page.get_by_role("textbox", name="Outcome / observation", exact=True).fill(observation)
         self.page.get_by_role("button", name="Add to case", exact=True).click()
@@ -137,8 +146,7 @@ class BrowserAcceptanceTests(unittest.TestCase):
         )["checks"][0]
         self.page.get_by_text("Evidence passages", exact=True).click()
         expect(self.page.get_by_text("Source:", exact=False).first).to_be_visible()
-        self.page.get_by_role("combobox", name="Documented check", exact=True).press("ArrowDown")
-        self.page.get_by_role("option", name=expected["text"], exact=True).click()
+        self.choose_check(expected["text"])
         self.record("Maintenance record verified in this simulated visit.")
         editor = self.page.get_by_role("textbox", name="Editable draft", exact=False)
         expect(editor).to_have_value(re.compile("Maintenance record verified"))
