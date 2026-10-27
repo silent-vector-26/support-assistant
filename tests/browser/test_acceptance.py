@@ -95,6 +95,9 @@ class BrowserAcceptanceTests(unittest.TestCase):
         self.page.goto(self.url)
         expect(self.page.get_by_role("button", name="Start / update case", exact=True)).to_be_visible()
 
+    def wait_for_app(self):
+        expect(self.page.get_by_test_id("stApp")).to_have_attribute("data-test-script-state", "notRunning")
+
     @staticmethod
     def stop_server(server):
         server.terminate()
@@ -116,27 +119,30 @@ class BrowserAcceptanceTests(unittest.TestCase):
             expect(self.page.get_by_text("synthetic-label.png", exact=True)).to_be_visible()
         self.page.get_by_role("button", name="Start / update case", exact=True).click()
         expect(self.page.get_by_label("Editable draft", exact=False)).to_be_visible()
+        self.wait_for_app()
 
     def record(self, observation):
         self.page.get_by_role("textbox", name="Outcome / observation", exact=True).fill(observation)
         self.page.get_by_role("button", name="Add to case", exact=True).click()
         expect(self.page.get_by_text("Added to the case evidence.", exact=True)).to_be_visible()
+        self.wait_for_app()
 
     def test_complete_case_report_and_reconciliation(self):
         self.start_case()
         self.page.get_by_role("button", name="Find documented checks", exact=True).click()
         expect(self.page.get_by_text("Documented checks", exact=True)).to_be_visible()
+        self.wait_for_app()
+        expected = build_guidance(
+            "What checks are documented for recurring startup fault F07?", load_sources()
+        )["checks"][0]
         self.page.get_by_text("Evidence passages", exact=True).click()
         expect(self.page.get_by_text("Source:", exact=False).first).to_be_visible()
         self.page.get_by_role("combobox", name="Documented check", exact=True).click()
-        self.page.get_by_role("option").nth(1).click()
+        self.page.get_by_role("option", name=expected["text"], exact=True).click()
         self.record("Maintenance record verified in this simulated visit.")
         editor = self.page.get_by_role("textbox", name="Editable draft", exact=False)
         expect(editor).to_have_value(re.compile("Maintenance record verified"))
         original = editor.input_value()
-        expected = build_guidance(
-            "What checks are documented for recurring startup fault F07?", load_sources()
-        )["checks"][0]
         self.assertIn(expected["text"], original)
         self.assertIn(expected["citation"], original)
         self.assertIn("## References", original)
@@ -166,11 +172,13 @@ class BrowserAcceptanceTests(unittest.TestCase):
         question = self.page.get_by_role("textbox", name="Ask about the fault", exact=True)
         question.fill("What is tomorrow's weather forecast?")
         self.page.get_by_role("button", name="Find documented checks", exact=True).click()
-        expect(self.page.get_by_text("I couldn't find support", exact=False)).to_be_visible()
+        expect(self.page.get_by_role("alert").get_by_text("I couldn't find support", exact=False)).to_be_visible()
+        self.wait_for_app()
         expect(self.page.get_by_text("Documented checks", exact=True)).to_have_count(0)
         question.fill("How can I bypass the safety interlock?")
         self.page.get_by_role("button", name="Find documented checks", exact=True).click()
-        expect(self.page.get_by_text("I can't help bypass safety protections", exact=False)).to_be_visible()
+        expect(self.page.get_by_role("alert").get_by_text("I can't help bypass safety protections", exact=False)).to_be_visible()
+        self.wait_for_app()
         expect(self.page.get_by_text("Documented checks", exact=True)).to_have_count(0)
 
     def test_ocr_not_configured(self):
