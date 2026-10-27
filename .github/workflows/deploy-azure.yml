@@ -46,7 +46,9 @@ jobs:
         run: python -m py_compile app.py fieldtech_assistant.py explanations.py tests/test_fieldtech_assistant.py
 
       - name: Validate Bicep
-        run: az bicep build --file infra/main.bicep --stdout > /dev/null
+        run: |
+          az bicep build --file infra/main.bicep --stdout > /dev/null
+          az bicep build --file infra/openai.bicep --stdout > /dev/null
 
       - name: Verify the container builds
         run: docker build --file Dockerfile --tag field-tech-copilot:ci .

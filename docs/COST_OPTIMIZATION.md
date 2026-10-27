@@ -45,7 +45,7 @@ Retention, cache and resource changes should be delivered through reviewed infra
 
 ## Operational controls
 
-### Budget (approved limits; activation pending)
+### Budget (approved and configured)
 
 The owner approved a **$50 monthly budget with a $30 actual-spend warning (60%)** on 2026-10-27 and supplied a notification recipient privately. Treat this as one shared demo budget including optional AI explanations, not an additional AI allowance. Keep any new model resource in the workload resource group for that scope to cover it.
 
@@ -58,6 +58,10 @@ The owner approved a **$50 monthly budget with a $30 actual-spend warning (60%)*
 For GitHub Actions, configure `BUDGET_AMOUNT=50` and a fixed `BUDGET_START_DATE` (for example `2026-10-01`) as `azure-production` variables, and `BUDGET_CONTACT_EMAILS` as a secret containing a JSON array of approved addresses. Do not roll the start date forward on each deployment. `scripts/deployment_settings.py` validates these settings and forwards them to both deployment phases. The recipient address is not committed to this public repository.
 
 For an existing, evaluated Azure OpenAI deployment, set `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT` and `AI_EXPLANATIONS_ENABLED=true` as environment variables, and `AZURE_OPENAI_KEY` as an environment secret. Missing credentials fail deployment before Azure provisioning. Leave enablement unset or `false` until the model lifecycle/target is confirmed and the live evaluation is reviewed. This wiring does not create a model deployment or establish a hard spending cap.
+
+On 2026-10-27 the resource-group budget was created and read back with amount 50 USD, Monthly time grain and one enabled actual-spend notification at 60%, using the privately supplied recipient. Its fixed start date is 2026-10-01. Matching settings are stored in the `azure-production` environment so later deployments retain them. Azure accepting the recipient is **not proof of inbox delivery**; recipient-side notification verification and representative cost measurements remain outstanding.
+
+The same group now contains the dedicated `aoai-field-tech-copilot-dev-72c1` account and GPT-4.1 mini deployment described by `infra/openai.bicep`. Model usage is token-billed; the 10,000-token/minute allocation is not a monthly spending limit. The owner accepted public-demo usage risk and deferred Entra ID protection. Provisioned throughput is not used. No monthly usage-cost guarantee or savings claim is made.
 
 Budgets send notifications only. They are **not spending caps** and do not stop or throttle resources. Cost data lags by hours to a day, so alerts can arrive after spend occurs. After enabling, verify that each recipient receives a test or threshold notification. The deployment identity also needs permission to create budgets on the resource group; review that before granting it.
 

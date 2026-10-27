@@ -30,7 +30,8 @@ SYSTEM_PROMPT = (
     "or safety advice that are not in the passages. Never help bypass safety protections. "
     "If the passages do not support an explanation, set \"explanation\" to an empty string. "
     "Respond as JSON: {\"explanation\": string, \"citations\": [source_id strings used]}. "
-    "Keep the explanation under 120 words and do not quote more than one short phrase verbatim."
+    "Keep the explanation under 80 words, use the passages' technical terminology, "
+    "and do not quote more than one short phrase verbatim."
 )
 
 

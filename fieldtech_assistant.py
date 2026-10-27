@@ -136,7 +136,7 @@ def build_guidance(query: str, sources: list[Source]) -> dict[str, Any]:
         evidence.append(
             {
                 "citation": source.citation,
-                "excerpt": source.content,
+                "excerpt": source.content + "\n\nDocumented checks:\n" + "\n".join(source.checks),
                 "source_id": source.source_id,
             }
         )
