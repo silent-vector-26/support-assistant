@@ -4,6 +4,7 @@ Requires requirements-dev.txt and `python -m playwright install chromium`.
 Run from the repository root: python scripts/capture_screenshots.py
 """
 
+import argparse
 import base64
 import os
 from pathlib import Path
@@ -39,10 +40,24 @@ def shot(page, name):
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--live-ai", action="store_true",
+                        help="Also capture a real AI explanation using configured credentials (billed).")
+    args = parser.parse_args()
     MEDIA.mkdir(parents=True, exist_ok=True)
     env = os.environ.copy()
     env.pop("AZURE_VISION_ENDPOINT", None)
     env.pop("AZURE_VISION_KEY", None)
+    if args.live_ai:
+        if env.get("AI_EXPLANATIONS_ENABLED", "").lower() != "true" or any(
+            not env.get(name) for name in (
+                "AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_KEY", "AZURE_OPENAI_DEPLOYMENT")
+        ):
+            raise SystemExit("--live-ai requires enabled, complete Azure OpenAI configuration.")
+    else:
+        for name in ("AI_EXPLANATIONS_ENABLED", "AZURE_OPENAI_ENDPOINT",
+                     "AZURE_OPENAI_KEY", "AZURE_OPENAI_DEPLOYMENT"):
+            env.pop(name, None)
     port = free_port()
     url = f"http://127.0.0.1:{port}"
     server = subprocess.Popen(
@@ -87,6 +102,13 @@ def main():
             settle(page)
             page.get_by_text("Evidence passages", exact=True).click()
             shot(page, "03-cited-checks.png")
+
+            if args.live_ai:
+                page.get_by_role("button", name="Explain these checks with AI (optional)", exact=True).click()
+                expect(page.get_by_role("status").get_by_text(
+                    "AI-generated explanation", exact=False)).to_be_visible(timeout=45000)
+                settle(page)
+                shot(page, "07-ai-explanation.png")
 
             question = page.get_by_role("textbox", name="Ask about the fault", exact=True)
             question.fill("What is tomorrow's weather forecast?")

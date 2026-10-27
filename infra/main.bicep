@@ -23,6 +23,15 @@ param visionKey string = ''
 
 param visionEndpoint string = ''
 
+@description('Enable only after a reviewed live model evaluation. Does not provision an OpenAI resource.')
+param aiExplanationsEnabled bool = false
+
+param openAiEndpoint string = ''
+param openAiDeployment string = ''
+
+@secure()
+param openAiKey string = ''
+
 var tags = {
   'app-onboard-skill': 'true'
   'app-onboard-session-id': sessionId
@@ -65,6 +74,10 @@ module budget './modules/budget.bicep' = if (budgetAmount > 0) {
     amount: budgetAmount
     startDate: budgetStartDate
     contactEmails: budgetContactEmails
+    actualThresholds: [
+      60
+    ]
+    forecastThresholds: []
   }
 }
 
@@ -92,6 +105,10 @@ module app './modules/container-app.bicep' = {
     containerImage: containerImage
     visionEndpoint: visionEndpoint
     visionKey: visionKey
+    aiExplanationsEnabled: aiExplanationsEnabled
+    openAiEndpoint: openAiEndpoint
+    openAiDeployment: openAiDeployment
+    openAiKey: openAiKey
     tags: tags
   }
 }

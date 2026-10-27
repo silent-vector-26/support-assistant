@@ -86,6 +86,13 @@ class ValidationTests(unittest.TestCase):
         for item in self.evidence:
             self.assertIn(item["source_id"], messages[1]["content"])
 
+    def test_evidence_contains_documented_checks(self):
+        source = next(s for s in load_sources() if s.source_id == "DEMO-RTU-MANUAL-4.2")
+        passage = next(item for item in self.evidence if item["source_id"] == source.source_id)
+        for check in source.checks:
+            self.assertIn(check, passage["excerpt"])
+        self.assertIn("return-air grille", build_messages(QUESTION, self.evidence)[1]["content"])
+
     def test_unsupported_and_unsafe_never_reach_the_model(self):
         calls = []
         for query in ("What is tomorrow's weather forecast?", "How can I bypass the safety interlock?"):
@@ -131,6 +138,25 @@ class ProviderTests(unittest.TestCase):
 
 
 class EvaluationTests(unittest.TestCase):
+    def test_live_failures_fail_the_evaluation(self):
+        from evaluation.run_evaluation import run_live
+
+        cases = [
+            {"id": "supported", "question": QUESTION, "expect": "accepted"},
+            {"id": "unsafe", "question": "How can I bypass the safety interlock?", "expect": "not_called"},
+        ]
+        config = ModelConfig("https://offline.invalid", "offline", "offline")
+        calls = []
+
+        def failed_model(*_):
+            calls.append(1)
+            raise ExplanationError("The model request timed out.")
+
+        with patch("builtins.print"):
+            self.assertEqual(run_live(cases, load_sources(), config, failed_model), ["supported"])
+            self.assertEqual(len(calls), 1)
+            self.assertEqual(run_live(cases, load_sources(), config, lambda *_: GOOD), [])
+
     def test_reference_evaluation_passes(self):
         result = subprocess.run([sys.executable, str(ROOT / "evaluation" / "run_evaluation.py")],
                                 capture_output=True, text=True, cwd=ROOT)

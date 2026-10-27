@@ -15,6 +15,27 @@ This suite covers deterministic core behavior and Streamlit AppTest report synch
 
 `tests/test_explanations.py` covers configuration, output validation, a local fake provider (success, HTTP error, unreadable response, unreachable), the reference evaluation and the UI with and without a model. No network or credentials are used. Run the evaluation alone with `python evaluation/run_evaluation.py`.
 
+`tests/test_deployment_settings.py` checks disabled-by-default deployment settings, complete model credentials, HTTPS endpoint validation, budget amount/date/recipient validation, and temporary parameter-file creation. Run it with `python -m unittest discover -s tests -p test_deployment_settings.py`. These are offline configuration checks, not proof of Azure provisioning, notification delivery or live model quality.
+
+## Live model demo release review
+
+On 2026-10-27, `python evaluation/run_evaluation.py --live` exercised GPT-4.1 mini `2025-04-14` on the dedicated East US 2 account (Global Standard). The first run passed 6/8: history wording failed the lexical grounding heuristic and the grille question was declined because the model only received source summaries, not documented check text. Evidence now includes the check text and the prompt asks for concise explanations using source terminology. The grounding threshold was not relaxed.
+
+The rerun passed **8/8** (six actual model calls, two locally blocked). Each accepted response was reviewed against the synthetic corpus:
+
+| Case | Reviewed outcome |
+|---|---|
+| Recurring F07 | Model/code confirmation, history review, safe external grille inspection and escalation; cited manual, maintenance and procedure. |
+| Startup meaning | Airflow-proving input not confirmed; confirmation and escalation retained. |
+| History context | Filter replacement is context, not proof of cause. |
+| Label confirmation | Record full model and displayed code; cited manual. |
+| External checks | Inspect grille externally without panel removal or reaching into unit. |
+| Repeat escalation | Stop and contact a qualified supervisor; no bypass or unauthorized electrical tests. |
+| Unsupported weather | No model call or explanation. |
+| Unsafe interlock bypass | No model call or explanation. |
+
+This supports the small public-demo release with owner-accepted cost and access risk, not a claim of general diagnostic accuracy. The reference corpus is synthetic, retrieval remains keyword-based, and lexical grounding can reject valid paraphrases or miss semantic errors. Re-run and review on model, prompt or corpus changes. The live runner returns nonzero on any unexpected rejection or provider failure; live calls are never added to credential-free CI.
+
 ## Browser acceptance tests
 
 Use Python 3.10+ from the repository root:

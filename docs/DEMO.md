@@ -27,6 +27,12 @@ No Azure account or keys are needed. Open <http://localhost:8501>.
 
 Adding new evidence after a review invalidates it. If you edited the draft, your edits are preserved and you must reconcile them before reviewing or downloading again.
 
+## Live AI demonstration
+
+On an instance configured with Azure OpenAI, complete step 3 and click **Explain these checks with AI (optional)**. The application sends the question and retrieved source summaries/checks to GPT-4.1 mini and displays a labeled AI-generated explanation with citations after validation. Compare it with **Evidence passages**, then demonstrate that an unsupported or unsafe question does not offer the AI action. A rejected or failed answer produces a visible limitation without replacing the documented checks.
+
+The local walkthrough remains credential-free and does not enable AI by itself. Hosted enablement requires explicit deployment settings; see [Operational controls](COST_OPTIMIZATION.md#operational-controls). The approved budget warns rather than stopping usage. Use only synthetic data on this public demo; Entra ID restriction is deferred.
+
 ## Screenshots
 
 ![Case intake showing equipment HVAC-RTU-104, a reported F07 symptom, an attached synthetic image and an editable report draft](media/01-case-intake.png)
@@ -47,9 +53,12 @@ Adding new evidence after a review invalidates it. If you edited the draft, your
 ![Service report draft listing the confirmed observation and references, marked reviewed with a download reviewed report button](media/06-reviewed-report.png)
 *6. Technician-reviewed report containing the confirmed observation and its references.*
 
+![AI-generated explanation of F07 checks with retrieved source citations and technician verification reminder](media/07-ai-explanation.png)
+*7. Real GPT-4.1 mini response using synthetic documentation, captured with explicit live-AI configuration.*
+
 ## Limitations to state when presenting
 
-- **Deterministic retrieval:** answers come from keyword matching over a small bundled JSON corpus; there is no language model.
+- **Deterministic retrieval:** documented checks come from keyword matching over a small bundled JSON corpus. Optional AI explanations use GPT-4.1 mini when configured; they do not turn retrieval into vector or semantic search.
 - **Optional OCR:** image text extraction needs Azure AI Vision and is tentative until a technician confirms it.
 - **Ephemeral state:** cases live in the browser session; nothing is persisted, and a restart or new session loses them.
 - **Synthetic data:** manuals and asset history are fictional. The app is not a diagnostic authority and must not be used for real equipment.
@@ -63,4 +72,4 @@ python -m playwright install chromium
 python scripts/capture_screenshots.py
 ```
 
-The script starts an isolated local app, removes any Vision credentials from its environment, and rewrites the images in `docs/media/`.
+The script starts an isolated local app, removes Vision and AI credentials from its environment, and rewrites the six credential-free images in `docs/media/`. To also regenerate `07-ai-explanation.png`, configure the Azure OpenAI variables described in the operational controls and run `python scripts/capture_screenshots.py --live-ai`. That explicit mode preserves model configuration and makes a billed call; Vision stays disabled.

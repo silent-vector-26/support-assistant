@@ -47,7 +47,7 @@ The bundled example follows a simulated rooftop HVAC unit, `HVAC-RTU-104`, with 
 - **Case evidence:** Record observations and check outcomes, with references preserved in the case.
 - **Constrained mock tool:** Look up synthetic asset history for known demo assets. No real CMMS or customer system is contacted.
 - **Service-report draft:** Review, edit, and download a Markdown report. New evidence automatically refreshes unedited reports; manual edits are preserved and must be explicitly reconciled before review or download. It is never automatically submitted.
-- **Optional AI explanations:** Off by default. When an operator configures Azure OpenAI, a technician can request an explanation of supported checks. Output is labeled, must cite retrieved passages, and is rejected otherwise; the deterministic workflow never depends on it. See [SDD](docs/SDD.md#5a-optional-ai-explanations).
+- **Optional AI explanations:** Off by default for local runs. The hosted demo is configured to use GPT-4.1 mini after a reviewed live evaluation. A technician can request a labeled explanation of supported checks with retrieved citations; rejected or failed responses leave the deterministic workflow intact. `infra/openai.bicep` describes the separately provisioned model; explicit deployment settings and a secret key enable the integration. See [SDD](docs/SDD.md#5a-optional-ai-explanations) and [operational controls](docs/COST_OPTIMIZATION.md#operational-controls).
 - **Automated tests:** Exercise retrieval, citations, unsupported queries, safety handling, report provenance, mock data isolation, and OCR parsing.
 
 ## Architecture

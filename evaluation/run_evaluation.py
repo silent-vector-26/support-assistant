@@ -6,7 +6,7 @@ without credentials or cost. It does NOT measure live model quality.
 
   python evaluation/run_evaluation.py          # offline guardrail evaluation
   python evaluation/run_evaluation.py --live   # also asks the configured model
-                                               # the supported questions (billed)
+                                               # a small live suite (billed)
 """
 
 import json
@@ -17,12 +17,13 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from explanations import (  # noqa: E402
-    ExplanationError, ModelConfig, config_from_env, explain,
+    ExplanationError, ModelConfig, call_model, config_from_env, explain,
 )
 from fieldtech_assistant import build_guidance, load_sources  # noqa: E402
 
 CASES = Path(__file__).with_name("explanation_cases.json")
 OFFLINE_CONFIG = ModelConfig("https://offline.invalid", "offline", "offline")
+LIVE_CASES = Path(__file__).with_name("live_cases.json")
 
 
 def scripted_model(case):
@@ -52,6 +53,30 @@ def run_case(case, sources, config, model):
     return outcome
 
 
+def run_live(cases, sources, config, model=call_model):
+    failures = []
+    for case in cases:
+        calls = []
+
+        def tracked(cfg, messages):
+            calls.append(1)
+            return model(cfg, messages)
+
+        try:
+            result = explain(case["question"], build_guidance(case["question"], sources), config, tracked)
+            outcome = "accepted"
+            print(f"LIVE {case['id']}: {result.text} {result.citations}")
+        except ExplanationError as exc:
+            outcome = "rejected" if calls else "not_called"
+            print(f"LIVE {case['id']}: {outcome}: {exc}")
+        passed = outcome == case["expect"]
+        print(f"{'PASS' if passed else 'FAIL'} LIVE {case['id']}: expected {case['expect']}, got {outcome}")
+        if not passed:
+            failures.append(case["id"])
+    print(f"Live cases: {len(cases) - len(failures)}/{len(cases)} passed")
+    return failures
+
+
 def main(argv):
     sources = load_sources()
     cases = json.loads(CASES.read_text(encoding="utf-8"))
@@ -70,17 +95,8 @@ def main(argv):
 
     if "--live" in argv:
         config = config_from_env()
-        supported = [c for c in cases if c["category"] == "supported" and c["id"] == "grounded-f07"]
-        accepted = 0
-        for case in supported:
-            guidance = build_guidance(case["question"], sources)
-            try:
-                result = explain(case["question"], guidance, config)
-                accepted += 1
-                print(f"LIVE accepted: {result.text} {result.citations}")
-            except ExplanationError as exc:
-                print(f"LIVE rejected/failed: {exc}")
-        print(f"Live accepted {accepted}/{len(supported)}")
+        live_cases = json.loads(LIVE_CASES.read_text(encoding="utf-8"))
+        failures.extend(run_live(live_cases, sources, config))
     return 1 if failures else 0
 
 
