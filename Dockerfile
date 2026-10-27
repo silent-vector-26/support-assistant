@@ -11,7 +11,7 @@ RUN groupadd --system app && useradd --system --gid app --create-home app
 COPY requirements.txt ./
 RUN python -m pip install --no-cache-dir -r requirements.txt
 
-COPY app.py fieldtech_assistant.py ./
+COPY app.py fieldtech_assistant.py explanations.py ./
 COPY data/ ./data/
 
 RUN chown -R app:app /app

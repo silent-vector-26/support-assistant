@@ -47,6 +47,7 @@ The bundled example follows a simulated rooftop HVAC unit, `HVAC-RTU-104`, with 
 - **Case evidence:** Record observations and check outcomes, with references preserved in the case.
 - **Constrained mock tool:** Look up synthetic asset history for known demo assets. No real CMMS or customer system is contacted.
 - **Service-report draft:** Review, edit, and download a Markdown report. New evidence automatically refreshes unedited reports; manual edits are preserved and must be explicitly reconciled before review or download. It is never automatically submitted.
+- **Optional AI explanations:** Off by default. When an operator configures Azure OpenAI, a technician can request an explanation of supported checks. Output is labeled, must cite retrieved passages, and is rejected otherwise; the deterministic workflow never depends on it. See [SDD](docs/SDD.md#5a-optional-ai-explanations).
 - **Automated tests:** Exercise retrieval, citations, unsupported queries, safety handling, report provenance, mock data isolation, and OCR parsing.
 
 ## Architecture
@@ -206,7 +207,7 @@ python -m unittest discover -s tests -v
 To check Python syntax:
 
 ```bash
-python -m py_compile app.py fieldtech_assistant.py tests/test_fieldtech_assistant.py
+python -m py_compile app.py fieldtech_assistant.py explanations.py tests/test_fieldtech_assistant.py
 ```
 
 ## Project structure

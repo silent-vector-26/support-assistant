@@ -175,6 +175,42 @@ This is a transparent demonstration heuristic, not semantic relevance verificati
 
 Corpus load failures stop the UI. Unknown mock assets produce a visible warning. Generated reports contain a draft disclaimer; marking reviewed is session-local and submits nothing externally. Download labels and filenames distinguish draft from reviewed state. Empty or unreconciled reports cannot be downloaded, and an empty report cannot be marked reviewed.
 
+## 5a. Optional AI explanations
+
+`explanations.py` is a separate, opt-in layer. It is active only when `AI_EXPLANATIONS_ENABLED=true` and `AZURE_OPENAI_ENDPOINT` (https), `AZURE_OPENAI_KEY` and `AZURE_OPENAI_DEPLOYMENT` are all set; otherwise the UI shows that explanations are disabled and nothing else changes. Provider cost and key handling are the operator's responsibility; see [Cost optimization](COST_OPTIMIZATION.md). No Bicep resource or secret is provisioned for it, and the deployment workflow does not enable it.
+
+```mermaid
+sequenceDiagram
+    participant T as Technician
+    participant UI as Streamlit UI
+    participant G as Deterministic guidance
+    participant E as explanations.py
+    participant M as Azure OpenAI
+    T->>UI: Ask question
+    UI->>G: build_guidance
+    G-->>UI: supported / unsupported / escalate
+    alt supported and enabled
+        T->>UI: Explain with AI
+        UI->>E: explain(question, evidence)
+        E->>M: question + retrieved passages only
+        M-->>E: JSON explanation + citations
+        E->>E: validate citations and grounding
+        alt accepted
+            E-->>UI: labeled explanation with citations
+        else rejected, timeout or error
+            E-->>UI: visible limitation, checks unchanged
+        end
+    else unsupported, escalate or disabled
+        UI-->>T: No model call
+    end
+```
+
+Validation requires JSON with a non-empty explanation (at most 1,200 characters) and citations that are a non-empty subset of the retrieved source IDs, no inline mention of unretrieved source IDs, and at least 60% of the explanation's content words present in the cited passages. The grounding check is a transparent lexical heuristic, not a semantic guarantee, so the UI tells the technician to verify against the passages.
+
+### Evaluation and release criteria
+
+`evaluation/explanation_cases.json` holds 11 reference cases (grounded, fabricated citation, missing citation, ungrounded procedure, unretrieved inline reference, model decline, malformed output, unsupported and unsafe questions, timeout, HTTP error). `python evaluation/run_evaluation.py` replays scripted outputs and is part of the unit-test run (11/11 pass). This validates the guardrails, **not live model quality**; `--live` additionally asks the configured model one supported question and is billed. Default enablement requires: all offline cases passing; a reviewed live run over a larger, owner-approved question set with every accepted explanation spot-checked for groundedness; an accepted provider/cost review; and a documented decision. None of these has happened, so the feature stays opt-in.
+
 ## 6. CI/CD and infrastructure lifecycle
 
 ```mermaid
@@ -223,6 +259,7 @@ Public HTTPS ingress has no user authentication or authorization. Regex checks, 
 | FR-7 | In-process synthetic asset lookup, no external side effects |
 | FR-8 | Editable Markdown draft and download, no automatic submission |
 | FR-9, NFR-6 | Core/AppTest regressions and real-browser acceptance tests in CI, not a comprehensive groundedness evaluation |
+| FR-10 | Opt-in explanation layer with citation/grounding validation and visible fallback |
 | NFR-2, NFR-3, NFR-4 | Citation fields, synthetic data boundary, visible dependency failures |
 | Section 13 | Bicep, non-root container, OIDC, protected deployment and live health check |
 

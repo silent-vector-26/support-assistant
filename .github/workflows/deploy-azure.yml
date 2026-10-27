@@ -9,6 +9,7 @@ on:
       - "*.py"
       - "data/**"
       - "tests/**"
+      - "evaluation/**"
       - "infra/**"
       - "requirements.txt"
       - "requirements-dev.txt"
@@ -41,7 +42,7 @@ jobs:
         run: python -m unittest discover -s tests -v
 
       - name: Check Python syntax
-        run: python -m py_compile app.py fieldtech_assistant.py tests/test_fieldtech_assistant.py
+        run: python -m py_compile app.py fieldtech_assistant.py explanations.py tests/test_fieldtech_assistant.py
 
       - name: Validate Bicep
         run: az bicep build --file infra/main.bicep --stdout > /dev/null

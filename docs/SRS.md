@@ -132,6 +132,12 @@ The project shall include a repeatable automated evaluation set covering citatio
 
 Browser acceptance coverage shall exercise case creation, cited guidance, recorded outcomes, report reconciliation and download, unsupported questions, safety escalation, and unavailable/failed OCR without production credentials. Pull-request CI shall retain useful browser diagnostics and block deployment if browser acceptance fails.
 
+### FR-10: Optional evidence-grounded AI explanations
+
+The application may offer a clearly optional language-model explanation of already retrieved, supported guidance. It shall be disabled by default and require explicit enablement and complete provider configuration. The model receives only the question and retrieved evidence passages, never uploaded images or case notes. Output shall be labeled AI-generated, shall cite retrieved source IDs, and is rejected when it is malformed, uncited, cites or mentions unretrieved sources, is excessively long, or is insufficiently grounded in the cited passages. Unsupported and safety-escalated questions shall never reach the model. Disabled, misconfigured, timed-out, failed or rejected calls shall be visible and shall leave the deterministic checks and evidence unchanged. Explanations are not added to the service report automatically.
+
+**Acceptance:** The base workflow passes without model credentials; evaluation covers citation validity, groundedness, unsupported and unsafe questions, and failure fallback; release criteria in the [SDD](SDD.md) are met before default enablement is considered.
+
 ## 7. Non-functional requirements
 
 ### NFR-1: Python implementation
@@ -226,6 +232,7 @@ The demo is ready when a user can complete the simulated HVAC case end to end; s
 - **Retrieval corpus:** bundled JSON source passages with stable IDs and a deterministic keyword-overlap retriever.
 - **Image text extraction:** optional Azure AI Vision Image Analysis REST API OCR; extracted text remains tentative until technician confirmation.
 - **State and tools:** in-session case state and synthetic mock asset-history lookup; no external ticket submission or equipment controls.
+- **Optional explanations:** Azure OpenAI chat completions over REST, opt-in via environment settings, with local output validation and a scripted-output evaluation set.
 - **Evaluation:** Python `unittest` tests for cited retrieval, unsupported questions, safety escalation, report provenance, mock asset isolation, and OCR response parsing.
 
 ## 13. Azure deployment requirements
