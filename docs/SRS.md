@@ -130,6 +130,8 @@ The project shall include a repeatable automated evaluation set covering citatio
 
 **Acceptance:** Automated tests are reproducible and report both passing and failing cases; failures are not silently treated as successful responses.
 
+Browser acceptance coverage shall exercise case creation, cited guidance, recorded outcomes, report reconciliation and download, unsupported questions, safety escalation, and unavailable/failed OCR without production credentials. Pull-request CI shall retain useful browser diagnostics and block deployment if browser acceptance fails.
+
 ## 7. Non-functional requirements
 
 ### NFR-1: Python implementation

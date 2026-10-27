@@ -11,6 +11,7 @@ on:
       - "tests/**"
       - "infra/**"
       - "requirements.txt"
+      - "requirements-dev.txt"
       - "Dockerfile"
       - ".dockerignore"
       - ".github/workflows/deploy-azure.yml"
@@ -48,9 +49,37 @@ jobs:
       - name: Verify the container builds
         run: docker build --file Dockerfile --tag field-tech-copilot:ci .
 
+  browser:
+    name: Browser acceptance tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - name: Install test dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Install Chromium
+        run: python -m playwright install --with-deps chromium
+      - name: Exercise browser acceptance scenarios
+        run: python -m unittest discover -s tests/browser -v
+      - name: Retain browser diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-diagnostics
+          path: test-results/browser/
+          retention-days: 7
+          if-no-files-found: warn
+
   deploy:
     name: Provision infrastructure and deploy container
-    needs: validate
+    needs: [validate, browser]
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     environment: azure-production
