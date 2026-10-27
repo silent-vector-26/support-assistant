@@ -42,7 +42,7 @@ The bundled example follows a simulated rooftop HVAC unit, `HVAC-RTU-104`, with 
 - **Honest limitations:** Unsupported questions produce an explicit no-answer response; safety-sensitive requests trigger a refusal/escalation message.
 - **Case evidence:** Record observations and check outcomes, with references preserved in the case.
 - **Constrained mock tool:** Look up synthetic asset history for known demo assets. No real CMMS or customer system is contacted.
-- **Service-report draft:** Review, edit, and download a Markdown report. It is never automatically submitted.
+- **Service-report draft:** Review, edit, and download a Markdown report. New evidence automatically refreshes unedited reports; manual edits are preserved and must be explicitly reconciled before review or download. It is never automatically submitted.
 - **Automated tests:** Exercise retrieval, citations, unsupported queries, safety handling, report provenance, mock data isolation, and OCR parsing.
 
 ## Architecture
@@ -177,7 +177,7 @@ Use the endpoint shown for your Azure AI Vision resource. Do not put credentials
 3. Ask: “What checks are documented for recurring startup fault F07?” Expand **Evidence passages** to inspect the citations.
 4. Record a documented check and a simulated outcome under **Record the visit**.
 5. Optionally use **Look up mock asset history** to show the synthetic maintenance entries.
-6. Review and edit the service report. Marking it reviewed is only a local demo state; no ticket or external report is submitted.
+6. Review and edit the service report. If case evidence changes after editing, compare the latest generated report with your edits, then explicitly confirm reconciliation or replace your edits with the latest evidence. Review and download are blocked until reconciliation. Marking it reviewed is only a local demo state; no ticket or external report is submitted.
 7. Try an unsupported question, such as a weather forecast, to see the no-guess response.
 8. Try asking how to bypass a safety interlock to see the safe escalation behavior.
 9. If OCR is configured, upload a synthetic equipment-label image and verify the extracted clues yourself.
@@ -185,6 +185,7 @@ Use the endpoint shown for your Azure AI Vision resource. Do not put credentials
 ## Tests
 
 The test suite uses Python's standard `unittest` module; no separate test framework is required.
+It includes core unit tests and Streamlit AppTest regressions for report refresh, preserved edits, reconciliation, review invalidation, OCR confirmation, and case replacement. AppTest exercises the UI logic without a browser or Azure credentials; it does not replace browser-level acceptance coverage.
 
 ```powershell
 python -m unittest discover -s tests -v
@@ -211,7 +212,8 @@ python -m py_compile app.py fieldtech_assistant.py tests/test_fieldtech_assistan
 ├── data/
 │   └── manuals.json               # Synthetic, cited troubleshooting corpus
 ├── tests/
-│   └── test_fieldtech_assistant.py
+│   ├── test_fieldtech_assistant.py
+│   └── test_report_workflow.py    # Streamlit report synchronization regressions
 ├── infra/
 │   ├── main.bicep                 # Subscription-scope entry point and resource group
 │   ├── main.parameters.json       # Non-secret deployment parameters
