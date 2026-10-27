@@ -15,7 +15,11 @@ A Python portfolio demo of an evidence-linked support assistant for commercial H
 
 > **Demonstration only.** The app uses simulated service data and a small sample corpus. It is not a diagnostic authority, a substitute for manufacturer instructions or site safety procedures, or a control system for real equipment.
 
-**Explore:** [Requirements](docs/SRS.md) · [System design](docs/SDD.md) · [Cost optimization](docs/COST_OPTIMIZATION.md) · [Local setup](#run-locally) · [Azure deployment](#deploy-to-azure-container-apps) · [Contributing](docs/CONTRIBUTING.md)
+> **See it in action:** Follow the [demo walkthrough](docs/DEMO.md) for a credential-free tour with screenshots.
+
+![Documented F07 checks with source citations and an editable service-report draft](docs/media/03-cited-checks.png)
+
+**Explore:** [Demo walkthrough](docs/DEMO.md) · [Requirements](docs/SRS.md) · [System design](docs/SDD.md) · [Cost optimization](docs/COST_OPTIMIZATION.md) · [Local setup](#run-locally) · [Azure deployment](#deploy-to-azure-container-apps) · [Contributing](docs/CONTRIBUTING.md)
 
 ## Why this project?
 
@@ -90,6 +94,7 @@ The basic application runs locally without cloud credentials. Only the OCR featu
 - [Community standards](docs/CODE_OF_CONDUCT.md)
 - [Citation metadata](CITATION.cff)
 - [Testing and browser diagnostics](docs/TESTING.md)
+- [Demo walkthrough](docs/DEMO.md)
 
 Repository standards include the [MIT license](LICENSE), [editor settings](.editorconfig), [line-ending rules](.gitattributes), and [Git ignore rules](.gitignore). Documentation lives in `docs/`, except this README and the license.
 
@@ -231,7 +236,11 @@ python -m py_compile app.py fieldtech_assistant.py tests/test_fieldtech_assistan
 │   ├── SDD.md                     # Software design and deployment behavior
 │   ├── COST_OPTIMIZATION.md       # Spending controls and optimization backlog
 │   ├── TESTING.md                 # Browser acceptance setup and diagnostics
+│   ├── DEMO.md                    # Walkthrough, limitations, and screenshots
+│   ├── media/                     # Synthetic-data screenshots
 │   └── SUPPORT.md
+├── scripts/
+│   └── capture_screenshots.py     # Regenerates docs/media screenshots
 ├── .dockerignore                 # Container build context exclusions
 ├── .editorconfig                 # Shared editor settings
 ├── .gitattributes                # Repository line-ending rules
