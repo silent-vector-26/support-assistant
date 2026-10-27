@@ -11,6 +11,10 @@ python -m unittest discover -s tests -v
 
 This suite covers deterministic core behavior and Streamlit AppTest report synchronization. It does not launch a browser. The browser directory deliberately has no `__init__.py`, so this command does not require Playwright or include the separate acceptance suite.
 
+## Explanation guardrails
+
+`tests/test_explanations.py` covers configuration, output validation, a local fake provider (success, HTTP error, unreadable response, unreachable), the reference evaluation and the UI with and without a model. No network or credentials are used. Run the evaluation alone with `python evaluation/run_evaluation.py`.
+
 ## Browser acceptance tests
 
 Use Python 3.10+ from the repository root:

@@ -9,6 +9,7 @@ This guide covers the current Bicep deployment, not a live billing audit. No bud
 | Container Registry | Basic, always provisioned | Historical estimate about USD 5.10/month, not a current quote or total monthly cap |
 | Container Apps | Consumption, 0.5 vCPU / 1 GiB, 0-1 replicas | Active sessions, traffic and cold starts can consume billable usage |
 | Log Analytics | PerGB2018, 30-day retention | Ingestion and applicable retention charges vary with volume and plan |
+| AI explanations | Optional Azure OpenAI, off by default | Billed per token only when an operator enables it and a technician clicks Explain; not created or included in the baseline |
 | Vision OCR | Optional external endpoint | Billed separately if configured, not created or included in the baseline |
 | GitHub Actions | Linux runners, tests and Docker builds | Private-repository minutes and storage depend on the account plan |
 | Network and storage | Image pulls, logs, responses and retained images | Region, traffic, storage allowance and egress affect charges |

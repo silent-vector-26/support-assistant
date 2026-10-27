@@ -6,6 +6,7 @@ import os
 
 import streamlit as st
 
+from explanations import ExplanationError, ExplanationNotConfigured, config_from_env, explain
 from fieldtech_assistant import (
     VisionNotConfigured,
     analyze_image,
@@ -29,6 +30,37 @@ def _reconcile_report(replace_edits: bool) -> None:
     st.session_state.report_reviewed = False
 
 
+def _render_explanation(result: dict) -> None:
+    """Optional AI explanation; the documented checks above never depend on it."""
+    try:
+        config = config_from_env()
+    except ExplanationNotConfigured as exc:
+        st.caption(f"ℹ️ {exc}")
+        return
+    if st.button("Explain these checks with AI (optional)"):
+        try:
+            with st.spinner("Asking the model…"):
+                explanation = explain(st.session_state.last_question, result, config)
+            st.session_state.explanation = {"ok": explanation}
+        except ExplanationError as exc:
+            st.session_state.explanation = {"error": str(exc)}
+    outcome = st.session_state.explanation
+    if not outcome:
+        return
+    if "error" in outcome:
+        st.warning(
+            f"AI explanation unavailable: {outcome['error']} "
+            "The documented checks and evidence above are unchanged."
+        )
+        return
+    explanation = outcome["ok"]
+    st.info(
+        "**AI-generated explanation — not a source document.** Verify it against the cited "
+        f"passages before relying on it.\n\n{explanation.text}\n\n"
+        "*Supporting passages: " + ", ".join(explanation.citations) + "*"
+    )
+
+
 st.set_page_config(page_title="Field Technician Copilot", page_icon="🧰", layout="wide")
 st.title("🧰 Field Technician Copilot")
 st.caption(
@@ -48,6 +80,8 @@ if "image_bytes" not in st.session_state:
     st.session_state.image_bytes = None
 if "guidance" not in st.session_state:
     st.session_state.guidance = None
+if "explanation" not in st.session_state:
+    st.session_state.explanation = None
 if "report_reviewed" not in st.session_state:
     st.session_state.report_reviewed = False
 
@@ -69,6 +103,7 @@ with st.sidebar:
             st.session_state.case = new_case(asset_id, symptom)
             st.session_state.image_bytes = photo.getvalue() if photo else None
             st.session_state.guidance = None
+            st.session_state.explanation = None
             st.session_state.report_reviewed = False
             for key in ("report_editor", "report_source", "report_last_evidence"):
                 st.session_state.pop(key, None)
@@ -145,6 +180,8 @@ with intake_col:
     if investigate:
         result = build_guidance(question, sources)
         st.session_state.guidance = result
+        st.session_state.explanation = None
+        st.session_state.last_question = question
         case["references"] = list(
             dict.fromkeys(ref["citation"] for ref in result["evidence"])
         )
@@ -162,6 +199,7 @@ with intake_col:
                 for item in result["evidence"]:
                     st.markdown(f"**{item['citation']}**")
                     st.write(item["excerpt"])
+            _render_explanation(result)
         elif result["status"] == "escalate":
             st.error(result["message"])
         else:
